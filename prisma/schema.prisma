@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  openId        String   @unique @db.VarChar(64)
+  name          String?  @db.Text
+  email         String?  @db.VarChar(320)
+  loginMethod   String?  @db.VarChar(64)
+  role          String   @default("user")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastSignedIn  DateTime @default(now())
+
+  accounts      Account[]
+  categories    Category[]
+  transactions  Transaction[]
+
+  @@map("users")
+}
+
+model Account {
+  id        Int      @id @default(autoincrement())
+  userId    String   @db.VarChar(64)
+  user      User     @relation(fields: [userId], references: [openId])
+  name      String   @db.VarChar(100)
+  type      String   @default("checking") @db.VarChar(30)
+  balance   Decimal  @default(0) @db.Decimal(12, 2)
+  color     String   @default("#3b82f6") @db.VarChar(20)
+  icon      String   @default("wallet.pass") @db.VarChar(50)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@map("accounts")
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  userId    String   @db.VarChar(64)
+  user      User     @relation(fields: [userId], references: [openId])
+  name      String   @db.VarChar(100)
+  type      String   @default("expense") @db.VarChar(20)
+  color     String   @default("#3b82f6") @db.VarChar(20)
+  icon      String   @default("tag.fill") @db.VarChar(50)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@map("categories")
+}
+
+model Transaction {
+  id            Int      @id @default(autoincrement())
+  userId        String   @db.VarChar(64)
+  user          User     @relation(fields: [userId], references: [openId])
+  accountId     Int
+  account       Account  @relation(fields: [accountId], references: [id])
+  categoryId    Int
+  category      Category @relation(fields: [categoryId], references: [id])
+  type          String   @db.VarChar(20)
+  amount        Decimal  @db.Decimal(12, 2)
+  description   String?  @db.Text
+  date          String   @db.VarChar(10)
+  status        String   @default("completed") @db.VarChar(20)
+  paymentMethod String?  @db.VarChar(50)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("transactions")
+}
