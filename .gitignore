@@ -1,6 +1,6 @@
 node_modules
 dist
-.env
+# .env (removido para permitir versionamento conforme solicitado)
 # prisma/migrations (removido para permitir versionamento)
 *.log
 .DS_Store
