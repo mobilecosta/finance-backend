@@ -12,7 +12,8 @@
     "db:generate": "npx prisma generate",
     "db:migrate": "npx prisma migrate deploy",
     "db:push": "npx prisma db push",
-    "db:status": "npx prisma migrate status"
+    "db:status": "npx prisma migrate status",
+    "deploy": "vercel --prod"
   },
   "keywords": [],
   "author": "",
