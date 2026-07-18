@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../lib/prisma.js';
+import { getPrisma } from '../lib/prisma.js';
 
 export class FinanceController {
   async getDashboard(req: Request, res: Response) {
@@ -7,6 +7,7 @@ export class FinanceController {
     if (!userId) return res.status(400).json({ error: 'userId is required' });
 
     try {
+      const prisma = getPrisma();
       const accounts = await prisma.account.findMany({ where: { userId: String(userId) } });
       const transactions = await prisma.transaction.findMany({
         where: { userId: String(userId) },
@@ -31,6 +32,7 @@ export class FinanceController {
     if (!userId) return res.status(400).json({ error: 'userId is required' });
 
     try {
+      const prisma = getPrisma();
       const transactions = await prisma.transaction.findMany({
         where: { userId: String(userId) },
         include: { category: true, account: true },
@@ -46,6 +48,7 @@ export class FinanceController {
     const { userId, accountId, categoryId, type, amount, description, date, status } = req.body;
     
     try {
+      const prisma = getPrisma();
       const transaction = await prisma.transaction.create({
         data: {
           userId,
