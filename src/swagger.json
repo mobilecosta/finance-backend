@@ -79,6 +79,69 @@
           }
         }
       }
+    },
+    "/api/finance/transactions/{id}": {
+      "put": {
+        "summary": "Atualizar uma transação existente",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": { "type": "integer" },
+                  "categoryId": { "type": "integer" },
+                  "type": { "type": "string", "enum": ["income", "expense"] },
+                  "amount": { "type": "number" },
+                  "description": { "type": "string" },
+                  "date": { "type": "string" },
+                  "status": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transação atualizada com sucesso"
+          },
+          "404": {
+            "description": "Transação não encontrada"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Excluir uma transação",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transação excluída com sucesso"
+          },
+          "404": {
+            "description": "Transação não encontrada"
+          }
+        }
+      }
     }
   }
 }
