@@ -7,6 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Para garantir que o build não quebre se a URL não estiver presente
+// Recomendado configurar a DATABASE_URL nas Environment Variables da Vercel (Build & Deployment)
+
 model User {
   id            Int      @id @default(autoincrement())
   openId        String   @unique @db.VarChar(64)
