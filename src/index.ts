@@ -38,8 +38,24 @@ app.get('/health', (req, res) => {
 
 app.use('/api/finance', financeRoutes);
 
+// Servir relatórios de cobertura de testes
+app.use('/coverage', express.static(path.join(__dirname, '../coverage')));
+app.get('/tests', (req, res) => {
+  const reportPath = path.join(__dirname, '../coverage/report.html');
+  if (fs.existsSync(reportPath)) {
+    res.sendFile(reportPath);
+  } else {
+    res.status(404).send('Relatório de testes não encontrado. Execute os testes primeiro.');
+  }
+});
+
 app.get('/', (req, res) => {
-  res.json({ message: 'Finance Pro API', docs: '/docs', health: '/health' });
+  res.json({ 
+    message: 'Finance Pro API', 
+    docs: '/docs', 
+    tests: '/tests',
+    health: '/health' 
+  });
 });
 
 // Export for Vercel
