@@ -34,7 +34,7 @@ async function runPrismaMigrations() {
 }
 
 // Executar migrações antes de iniciar o servidor
-// runPrismaMigrations();
+runPrismaMigrations();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
