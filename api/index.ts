@@ -130,25 +130,35 @@ app.get('/coverage', async (req: any, res: any) => {
     }
   } catch (e) {}
 
+  const reportHtmlPath = path.resolve(process.cwd(), 'coverage', 'report.html');
+  if (!fs.existsSync(reportHtmlPath)) {
+    return res.status(404).send('Nenhum relatório de cobertura encontrado.');
+  }
+
   try {
+    const reportHtml = fs.readFileSync(reportHtmlPath, 'utf8');
+
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_ANON_KEY;
     if (supabaseUrl && supabaseKey) {
       const supabase = createClient(supabaseUrl, supabaseKey);
-      const { data: files, error } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('coverage-reports')
-        .list('', { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
-
-      if (!error && files && files.length > 0) {
-        const { data: { publicUrl } } = supabase.storage
-          .from('coverage-reports')
-          .getPublicUrl(files[0].name);
-        return res.redirect(publicUrl);
+        .upload('latest.html', reportHtml, { contentType: 'text/html', upsert: true });
+      if (uploadError) {
+        console.error('Erro ao fazer upload para Storage:', uploadError);
       }
     }
-  } catch (e) {}
 
-  res.status(404).send('Nenhum relatório de cobertura encontrado.');
+    await (prisma as any).test.create({ data: { reportHtml } });
+    console.log('Relatório salvo no banco de dados com sucesso.');
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(reportHtml);
+  } catch (error) {
+    console.error('Erro ao processar relatório:', error);
+    res.status(500).send('Erro interno ao processar relatório.');
+  }
 });
 
 app.post('/coverage', async (req: any, res: any) => {

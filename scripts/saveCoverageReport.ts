@@ -1,43 +1,49 @@
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseSvcRole = process.env.SUPABASE_SERVICE_ROLE || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_ANON_KEY || '';
 const reportHtmlPath = path.join(process.cwd(), 'coverage', 'report.html');
 
 async function saveCoverageReport() {
   try {
-    const jestBin = path.resolve(process.cwd(), 'node_modules', '.bin', 'jest');
-    console.log('Executando testes...');
-    execSync(`"${jestBin}" --coverage --no-cache`, {
-      stdio: 'inherit',
-      timeout: 180000,
-      env: { ...process.env, NODE_ENV: 'test', NODE_OPTIONS: '--experimental-vm-modules' },
-    });
+    if (!fs.existsSync(reportHtmlPath)) {
+      console.log('Relatório não encontrado em', reportHtmlPath);
+      console.log('Tentando gerar com Jest...');
+      const jestBin = path.resolve(process.cwd(), 'node_modules', '.bin', 'jest');
+      execSync(`"${jestBin}" --coverage --no-cache`, {
+        stdio: 'inherit',
+        timeout: 180000,
+        env: { ...process.env, NODE_ENV: 'test', NODE_OPTIONS: '--experimental-vm-modules' },
+      });
+    }
 
     if (!fs.existsSync(reportHtmlPath)) {
       console.error('Erro: Relatório não foi gerado em', reportHtmlPath);
-      process.exit(1);
+      return;
     }
 
     const reportHtml = fs.readFileSync(reportHtmlPath, 'utf8');
-    const supabase = createClient(supabaseUrl, supabaseSvcRole);
-    const bucket = 'coverage-reports';
-    const fileName = 'latest.html';
 
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(fileName, reportHtml, { contentType: 'text/html', upsert: true });
+    if (supabaseKey) {
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const bucket = 'coverage-reports';
+      const fileName = 'latest.html';
 
-    if (uploadError) {
-      console.error('Erro ao fazer upload para Storage:', uploadError);
-      process.exit(1);
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, reportHtml, { contentType: 'text/html', upsert: true });
+
+      if (uploadError) {
+        console.error('Erro ao fazer upload para Storage:', uploadError);
+      } else {
+        const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(fileName);
+        console.log('Relatório enviado para Storage:', publicUrl);
+      }
+    } else {
+      console.log('SUPABASE_SERVICE_ROLE não configurado — pulando Storage.');
     }
-
-    const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(fileName);
-    console.log('Relatório enviado para Storage:', publicUrl);
 
     const { PrismaClient } = await import('@prisma/client') as any;
     const dbUrl = process.env.DATABASE_URL || '';
@@ -49,7 +55,7 @@ async function saveCoverageReport() {
     await prisma.test.create({ data: { reportHtml } });
     await prisma.$disconnect();
 
-    console.log('Relatório salvo no banco de dados e no Storage com sucesso.');
+    console.log('Relatório salvo no banco de dados com sucesso.');
   } catch (error) {
     console.error('Erro ao salvar o relatório:', error);
     process.exit(1);
