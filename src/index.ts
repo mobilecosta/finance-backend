@@ -59,21 +59,30 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/finance', financeRoutes);
 
-// Servir relatórios de cobertura de testes
-app.use('/coverage', express.static(path.join(__dirname, '../coverage')));
-app.get('/tests', (req, res) => {
-  const reportPath = path.join(__dirname, '../coverage/report.html');
-  if (fs.existsSync(reportPath)) {
-    res.sendFile(reportPath);
-  } else {
-    res.status(404).send('Relatório de testes não encontrado. Execute os testes primeiro.');
+// Servir relatórios de cobertura de testes.
+// O `express.static` não usa `report.html` como arquivo padrão, por isso
+// a rota raiz precisa enviar o relatório explicitamente.
+const coverageDirectory = path.join(__dirname, '../coverage');
+const coverageReportPath = path.join(coverageDirectory, 'report.html');
+
+const sendCoverageReport = (_req: express.Request, res: express.Response) => {
+  if (fs.existsSync(coverageReportPath)) {
+    res.sendFile(coverageReportPath);
+    return;
   }
-});
+
+  res.status(404).send('Relatório de cobertura não encontrado. Execute `pnpm test:coverage` primeiro.');
+};
+
+app.get('/coverage', sendCoverageReport);
+app.use('/coverage', express.static(coverageDirectory));
+app.get('/tests', sendCoverageReport);
 
 app.get('/', (req, res) => {
   res.json({ 
     message: 'Finance Pro API', 
     docs: '/docs', 
+    coverage: '/coverage',
     tests: '/tests',
     health: '/health' 
   });
@@ -82,7 +91,7 @@ app.get('/', (req, res) => {
 // Export for Vercel
 export default app;
 
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
   app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
   });
