@@ -85,20 +85,26 @@ app.use('/api/finance', financeRoutes);
 // a rota raiz precisa enviar o relatório explicitamente.
 const sendCoverageReport = async (_req: express.Request, res: express.Response) => {
   try {
+    // Tenta buscar do banco de dados primeiro
     const latestReport = await prisma.coverageReport.findFirst({
       orderBy: { createdAt: 'desc' },
     });
 
     if (latestReport) {
       res.setHeader('Content-Type', 'text/html');
-      res.send(latestReport.reportHtml);
-    } else {
-      res.status(404).send('Relatório de cobertura não encontrado no banco de dados. Execute `pnpm test:coverage` primeiro.');
+      return res.send(latestReport.reportHtml);
     }
   } catch (error) {
-    console.error('Erro ao buscar relatório de cobertura do banco de dados:', error);
-    res.status(500).send('Erro interno do servidor ao buscar o relatório de cobertura.');
+    console.error('Erro ao buscar relatório de cobertura do banco de dados, tentando arquivo local:', error);
   }
+
+  // Fallback para arquivo local se o banco falhar ou estiver vazio
+  const localReportPath = path.resolve(process.cwd(), 'coverage', 'report.html');
+  if (fs.existsSync(localReportPath)) {
+    return res.sendFile(localReportPath);
+  }
+
+  res.status(404).send('Relatório de cobertura não encontrado. Execute `npm run test:coverage` primeiro.');
 };
 
 app.get('/coverage', sendCoverageReport);
