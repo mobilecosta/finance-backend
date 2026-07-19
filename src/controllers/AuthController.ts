@@ -47,6 +47,7 @@ export class AuthController {
         },
         create: {
           openId: data.user.id,
+          tenantId: 1,
           name: fullName,
           email: email,
           loginMethod: 'email',
@@ -89,6 +90,7 @@ export class AuthController {
         },
         create: {
           openId: data.user.id,
+          tenantId: 1,
           name: data.user.user_metadata?.full_name || null,
           email: data.user.email || null,
           loginMethod: 'email',

@@ -66,6 +66,7 @@ export class FinanceController {
       const prisma = await getPrisma();
       const transaction = await prisma.transaction.create({
         data: {
+          tenantId: 1,
           userId,
           accountId,
           categoryId,
