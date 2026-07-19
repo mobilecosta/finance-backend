@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
+import 'dotenv/config';
 import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
 import path from 'path';
@@ -23,7 +23,10 @@ try {
   const swaggerPath = path.join(__dirname, 'swagger.json');
   if (fs.existsSync(swaggerPath)) {
     const swaggerDocument = JSON.parse(fs.readFileSync(swaggerPath, 'utf8'));
-    app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+    app.use('/docs', swaggerUi.serve);
+    app.get('/docs', (req, res) => {
+      res.send(swaggerUi.generateHTML(swaggerDocument));
+    });
   }
 } catch (error) {
   console.error('Failed to load swagger.json', error);

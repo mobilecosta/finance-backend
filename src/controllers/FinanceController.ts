@@ -78,4 +78,85 @@ export class FinanceController {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+  async updateTransaction(req: Request, res: Response) {
+    const { id } = req.params;
+    const { accountId, categoryId, type, amount, description, date, status } = req.body;
+
+    try {
+      const prisma = getPrisma();
+      
+      // Get old transaction to adjust balance
+      const oldTransaction = await prisma.transaction.findUnique({
+        where: { id: Number(id) }
+      });
+
+      if (!oldTransaction) {
+        return res.status(404).json({ error: 'Transaction not found' });
+      }
+
+      const transaction = await prisma.transaction.update({
+        where: { id: Number(id) },
+        data: {
+          accountId,
+          categoryId,
+          type,
+          amount,
+          description,
+          date,
+          status
+        }
+      });
+
+      // Adjust balance if amount or type changed
+      if (oldTransaction.accountId === accountId) {
+        const oldModifier = oldTransaction.type === 'income' ? 1 : -1;
+        const newModifier = type === 'income' ? 1 : -1;
+        const diff = (Number(amount) * newModifier) - (Number(oldTransaction.amount) * oldModifier);
+        
+        await prisma.account.update({
+          where: { id: accountId },
+          data: { balance: { increment: diff } }
+        });
+      }
+
+      res.json(transaction);
+    } catch (error) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  async deleteTransaction(req: Request, res: Response) {
+    const { id } = req.params;
+
+    try {
+      const prisma = getPrisma();
+      const transaction = await prisma.transaction.findUnique({
+        where: { id: Number(id) }
+      });
+
+      if (!transaction) {
+        return res.status(404).json({ error: 'Transaction not found' });
+      }
+
+      await prisma.transaction.delete({
+        where: { id: Number(id) }
+      });
+
+      // Revert balance
+      const modifier = transaction.type === 'income' ? -1 : 1;
+      await prisma.account.update({
+        where: { id: transaction.accountId },
+        data: {
+          balance: {
+            increment: Number(transaction.amount) * modifier
+          }
+        }
+      });
+
+      res.json({ message: 'Transaction deleted' });
+    } catch (error) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
 }
