@@ -131,8 +131,9 @@ app.get('/coverage', async (req: any, res: any) => {
 
   try {
     const scriptPath = path.resolve(process.cwd(), 'scripts', 'saveCoverageReport.ts');
+    const tsxBin = path.resolve(process.cwd(), 'node_modules', '.bin', 'tsx');
     if (fs.existsSync(scriptPath)) {
-      execSync(`npx tsx ${scriptPath}`, { stdio: 'inherit', timeout: 120000 });
+      execSync(`"${tsxBin}" "${scriptPath}"`, { stdio: 'inherit', timeout: 120000 });
       const saved = await (prisma as any).test.findFirst({
         orderBy: { createdAt: 'desc' },
       });

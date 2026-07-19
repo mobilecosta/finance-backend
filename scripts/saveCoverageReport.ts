@@ -7,8 +7,9 @@ const reportPdfPath = path.join(process.cwd(), 'coverage', 'report.pdf');
 
 async function saveCoverageReport() {
   try {
+    const jestBin = path.resolve(process.cwd(), 'node_modules', '.bin', 'jest');
     console.log('Executando testes...');
-    execSync('npx jest --coverage --no-cache', {
+    execSync(`"${jestBin}" --coverage --no-cache`, {
       stdio: 'inherit',
       timeout: 180000,
       env: { ...process.env, NODE_ENV: 'test', NODE_OPTIONS: '--experimental-vm-modules' },
@@ -44,4 +45,4 @@ async function saveCoverageReport() {
   }
 }
 
-saveCoverageReport();
+await saveCoverageReport();
