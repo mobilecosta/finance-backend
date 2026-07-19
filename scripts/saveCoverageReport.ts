@@ -4,13 +4,13 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_ANON_KEY || '';
-const reportHtmlPath = path.join(process.cwd(), 'coverage', 'report.html');
+const reportHtmlPath = path.join(process.cwd(), 'coverage', 'lcov-report', 'index.html');
 
 async function saveCoverageReport() {
   try {
     if (!fs.existsSync(reportHtmlPath)) {
-      console.log('Relatório não encontrado em', reportHtmlPath);
-      console.log('Tentando gerar com Jest...');
+      console.log('Relatório LCOV não encontrado em', reportHtmlPath);
+      console.log('Tentando gerar com Jest --coverage...');
       const jestBin = path.resolve(process.cwd(), 'node_modules', '.bin', 'jest');
       execSync(`"${jestBin}" --coverage --no-cache`, {
         stdio: 'inherit',

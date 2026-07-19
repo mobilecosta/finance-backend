@@ -28,8 +28,10 @@ async function runPrismaMigrations() {
   }
 }
 
-// Executar migrações antes de iniciar o servidor
-runPrismaMigrations();
+// Executar migrações antes de iniciar o servidor (pular em modo de teste)
+if (process.env.NODE_ENV !== 'test') {
+  runPrismaMigrations();
+}
 const port = process.env.PORT || 3000;
 
 app.use(cors());
@@ -143,6 +145,13 @@ app.get('/coverage', async (req, res) => {
       res.setHeader('Content-Type', 'text/html');
       return res.send(latestTest.reportHtml);
     }
+
+    // Fallback for local file
+    const reportPath = path.resolve(process.cwd(), 'coverage', 'report.html');
+    if (fs.existsSync(reportPath)) {
+      return res.sendFile(reportPath);
+    }
+
     res.status(404).send('Nenhum relatório de cobertura encontrado.');
   } catch (error) {
     console.error('Erro ao buscar relatório:', error);

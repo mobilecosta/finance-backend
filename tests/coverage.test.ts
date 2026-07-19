@@ -2,15 +2,21 @@ import fs from 'fs';
 import path from 'path';
 import request from 'supertest';
 import app from '../src/index.js';
+import { getPrisma } from '../src/lib/prisma.js';
 
 const coverageDirectory = path.resolve(process.cwd(), 'coverage');
 const reportPath = path.join(coverageDirectory, 'report.html');
 const fixtureReport = '<!doctype html><html><body>Coverage test report</body></html>';
 
 let previousReport: string | undefined;
+let prisma: any;
 
 describe('Coverage report routes', () => {
-  beforeAll(() => {
+  beforeAll(async () => {
+    prisma = await getPrisma();
+    // Remove database records so tests use local file
+    await prisma.test.deleteMany();
+
     previousReport = fs.existsSync(reportPath)
       ? fs.readFileSync(reportPath, 'utf8')
       : undefined;
@@ -19,13 +25,13 @@ describe('Coverage report routes', () => {
     fs.writeFileSync(reportPath, fixtureReport);
   });
 
-  afterAll(() => {
+  afterAll(async () => {
     if (previousReport === undefined) {
       fs.rmSync(reportPath, { force: true });
-      return;
+    } else {
+      fs.writeFileSync(reportPath, previousReport);
     }
-
-    fs.writeFileSync(reportPath, previousReport);
+    if (prisma) await prisma.$disconnect();
   });
 
   it.each(['/coverage', '/tests'])('GET %s deve retornar o relatório HTML', async (route) => {
@@ -49,7 +55,7 @@ describe('Coverage report routes', () => {
     const response = await request(app).get('/coverage');
 
     expect(response.status).toBe(404);
-    expect(response.text).toContain('Relatório de cobertura não encontrado');
+    expect(response.text).toContain('Nenhum relatório de cobertura encontrado');
 
     fs.writeFileSync(reportPath, fixtureReport);
   });
