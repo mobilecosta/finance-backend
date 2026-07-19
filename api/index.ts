@@ -42,7 +42,7 @@ try {
     ];
 
     app.use('/docs', swaggerUi.serve);
-    app.get('/docs', (req, res) => {
+    app.get('/docs', (req: any, res: any) => {
       res.send(
         swaggerUi.generateHTML(swaggerDocument, {
           customCssUrl: CSS_URL,
@@ -55,7 +55,7 @@ try {
   console.error('Failed to load swagger.json', error);
 }
 
-app.get('/health', (req, res) => {
+app.get('/health', (req: any, res: any) => {
   res.json({ status: 'ok', message: 'Backend is running' });
 });
 
@@ -85,7 +85,7 @@ app.get('/tests', async (req: any, res: any) => {
   }
 });
 
-app.get('/tests/pdf', async (req, res) => {
+app.get('/tests/pdf', async (req: any, res: any) => {
   try {
     const latestTest = await (prisma as any).test.findFirst({
       orderBy: { createdAt: 'desc' },
@@ -103,7 +103,7 @@ app.get('/tests/pdf', async (req, res) => {
   }
 });
 
-app.get('/coverage', async (req, res) => {
+app.get('/coverage', async (req: any, res: any) => {
   try {
     const latestTest = await (prisma as any).test.findFirst({
       orderBy: { createdAt: 'desc' },
