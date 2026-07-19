@@ -8,11 +8,25 @@ datasource db {
 }
 
 // Para garantir que o build não quebre se a URL não estiver presente
-// Recomendado configurar a DATABASE_URL nas Environment Variables da Vercel (Build & Deployment)
+model Tenant {
+  tenantId  Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  accounts      Account[]
+  categories    Category[]
+  transactions  Transaction[]
+
+  @@map("tenants")
+}
 
 model User {
   id            Int      @id @default(autoincrement())
   openId        String   @unique @db.VarChar(64)
+  tenantId      Int
+  tenant        Tenant   @relation(fields: [tenantId], references: [tenantId])
   name          String?  @db.Text
   email         String?  @db.VarChar(320)
   loginMethod   String?  @db.VarChar(64)
@@ -30,6 +44,8 @@ model User {
 
 model Account {
   id        Int      @id @default(autoincrement())
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [tenantId])
   userId    String   @db.VarChar(64)
   user      User     @relation(fields: [userId], references: [openId])
   name      String   @db.VarChar(100)
@@ -48,6 +64,8 @@ model Account {
 
 model Category {
   id        Int      @id @default(autoincrement())
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [tenantId])
   userId    String   @db.VarChar(64)
   user      User     @relation(fields: [userId], references: [openId])
   name      String   @db.VarChar(100)
@@ -65,6 +83,8 @@ model Category {
 
 model Transaction {
   id            Int      @id @default(autoincrement())
+  tenantId      Int
+  tenant        Tenant   @relation(fields: [tenantId], references: [tenantId])
   userId        String   @db.VarChar(64)
   user          User     @relation(fields: [userId], references: [openId])
   accountId     Int
