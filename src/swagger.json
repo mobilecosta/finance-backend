@@ -163,6 +163,394 @@
           "200": { "description": "Transação excluída" }
         }
       }
+    },
+    "/api/acbr/auth": {
+      "post": {
+        "summary": "Autenticar na ACBr API",
+        "tags": ["ACBr"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "client_id": { "type": "string", "description": "Client ID fornecido pela ACBr" },
+                  "client_secret": { "type": "string", "description": "Client Secret fornecido pela ACBr" }
+                },
+                "required": ["client_id", "client_secret"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token de acesso retornado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": { "type": "string" },
+                    "expires_in": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "502": { "description": "Falha na autenticação com ACBr" }
+        }
+      }
+    },
+    "/api/acbr/empresas": {
+      "get": {
+        "summary": "Listar empresas (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "$top", "in": "query", "schema": { "type": "integer", "default": 10 }, "description": "Limite de registros" },
+          { "name": "$skip", "in": "query", "schema": { "type": "integer", "default": 0 }, "description": "Registros a pular" },
+          { "name": "cpf_cnpj", "in": "query", "schema": { "type": "string" }, "description": "Filtrar por CPF/CNPJ" },
+          { "name": "nome_razao_social", "in": "query", "schema": { "type": "string" }, "description": "Filtrar por nome/razão social" },
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "responses": {
+          "200": { "description": "Lista de empresas" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      },
+      "post": {
+        "summary": "Cadastrar empresa (proxy ACBr)",
+        "tags": ["ACBr"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cpf_cnpj": { "type": "string" },
+                  "nome_razao_social": { "type": "string" },
+                  "nome_fantasia": { "type": "string" },
+                  "email": { "type": "string" },
+                  "fone": { "type": "string" },
+                  "inscricao_estadual": { "type": "string" },
+                  "inscricao_municipal": { "type": "string" },
+                  "endereco": {
+                    "type": "object",
+                    "properties": {
+                      "logradouro": { "type": "string" },
+                      "numero": { "type": "string" },
+                      "complemento": { "type": "string" },
+                      "bairro": { "type": "string" },
+                      "codigo_municipio": { "type": "string" },
+                      "cidade": { "type": "string" },
+                      "uf": { "type": "string" },
+                      "cep": { "type": "string" },
+                      "codigo_pais": { "type": "string", "default": "1058" },
+                      "pais": { "type": "string", "default": "Brasil" }
+                    }
+                  }
+                },
+                "required": ["cpf_cnpj", "nome_razao_social", "email", "endereco"]
+              }
+            }
+          }
+        },
+        "parameters": [
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "responses": {
+          "200": { "description": "Empresa cadastrada" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      }
+    },
+    "/api/acbr/empresas/{cpf_cnpj}": {
+      "get": {
+        "summary": "Consultar empresa (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "cpf_cnpj", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "responses": {
+          "200": { "description": "Dados da empresa" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      },
+      "put": {
+        "summary": "Alterar empresa (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "cpf_cnpj", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cpf_cnpj": { "type": "string" },
+                  "nome_razao_social": { "type": "string" },
+                  "nome_fantasia": { "type": "string" },
+                  "email": { "type": "string" },
+                  "fone": { "type": "string" },
+                  "inscricao_estadual": { "type": "string" },
+                  "inscricao_municipal": { "type": "string" },
+                  "endereco": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Empresa alterada" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      },
+      "delete": {
+        "summary": "Deletar empresa (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "cpf_cnpj", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "responses": {
+          "204": { "description": "Empresa deletada" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      }
+    },
+    "/api/acbr/empresas/{cpf_cnpj}/certificado": {
+      "get": {
+        "summary": "Consultar certificado (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "cpf_cnpj", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "responses": {
+          "200": { "description": "Dados do certificado" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      },
+      "put": {
+        "summary": "Cadastrar certificado (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "cpf_cnpj", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "certificado": { "type": "string", "description": "Binário do certificado .pfx/.p12 em base64" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Certificado cadastrado" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      },
+      "delete": {
+        "summary": "Deletar certificado (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "cpf_cnpj", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "responses": {
+          "204": { "description": "Certificado deletado" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      }
+    },
+    "/api/acbr/empresas/{cpf_cnpj}/nfse": {
+      "get": {
+        "summary": "Consultar configuração NFS-e (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "cpf_cnpj", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "responses": {
+          "200": { "description": "Configuração NFS-e da empresa" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      },
+      "put": {
+        "summary": "Alterar configuração NFS-e (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "cpf_cnpj", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "regTrib": { "type": "object" },
+                  "rps": { "type": "object" },
+                  "incentivo_fiscal": { "type": "boolean" },
+                  "ambiente": { "type": "string", "enum": ["homologacao", "producao"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Configuração alterada" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      }
+    },
+    "/api/acbr/nfse": {
+      "get": {
+        "summary": "Listar NFS-e (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "cpf_cnpj", "in": "query", "required": true, "schema": { "type": "string" }, "description": "CPF/CNPJ do prestador" },
+          { "name": "$top", "in": "query", "schema": { "type": "integer", "default": 10 } },
+          { "name": "$skip", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "responses": {
+          "200": { "description": "Lista de NFS-e" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      }
+    },
+    "/api/acbr/nfse/dps": {
+      "post": {
+        "summary": "Emitir NFS-e (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "provedor": { "type": "string", "default": "padrao" },
+                  "ambiente": { "type": "string", "enum": ["homologacao", "producao"] },
+                  "referencia": { "type": "string" },
+                  "infDPS": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "NFS-e emitida" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      }
+    },
+    "/api/acbr/nfse/{id}": {
+      "get": {
+        "summary": "Consultar NFS-e (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "responses": {
+          "200": { "description": "Detalhes da NFS-e" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      }
+    },
+    "/api/acbr/nfse/{id}/cancelamento": {
+      "get": {
+        "summary": "Consultar cancelamento NFS-e (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "responses": {
+          "200": { "description": "Dados do cancelamento" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      },
+      "post": {
+        "summary": "Cancelar NFS-e (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "motivo": { "type": "string", "default": "Cancelamento solicitado pelo emitente" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Cancelamento solicitado" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      }
+    },
+    "/api/acbr/nfse/{id}/sincronizar": {
+      "post": {
+        "summary": "Sincronizar NFS-e com prefeitura (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "ambiente", "in": "query", "schema": { "type": "string", "enum": ["homologacao", "producao"], "default": "homologacao" } }
+        ],
+        "responses": {
+          "200": { "description": "Sincronização realizada" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      }
+    },
+    "/api/acbr/nfse/cidades": {
+      "get": {
+        "summary": "Listar cidades atendidas (proxy ACBr)",
+        "tags": ["ACBr"],
+        "responses": {
+          "200": { "description": "Lista de cidades" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      }
+    },
+    "/api/acbr/nfse/cidades/{codigo_ibge}": {
+      "get": {
+        "summary": "Consultar metadados de cidade (proxy ACBr)",
+        "tags": ["ACBr"],
+        "parameters": [
+          { "name": "codigo_ibge", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Metadados da cidade" },
+          "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      }
     }
   }
 }
