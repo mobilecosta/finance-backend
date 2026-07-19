@@ -1,102 +1,105 @@
-# Finance Pro Backend 🚀
+# Finance Pro - Backend API
 
-Este é o servidor de API para o aplicativo **Finance Pro Mobile**, desenvolvido com **Node.js**, **Express**, **Prisma ORM** e **Supabase**.
+Esta é a API de back-end para o sistema **Finance Pro**, um gerenciador de finanças pessoais. A API foi construída com **Node.js**, **Express 5**, **TypeScript** e **Prisma ORM**, utilizando **Supabase Auth** para autenticação e **PostgreSQL** (Supabase) como banco de dados.
 
-## 🎯 Visão Geral
+## 🚀 Tecnologias Utilizadas
 
-O **Finance Pro Backend** atua como o BFF (Backend for Frontend) do aplicativo mobile, gerenciando a lógica de negócio, autenticação e persistência de dados no PostgreSQL (Supabase).
+- **Node.js 22**
+- **Express 5** (Beta)
+- **TypeScript 5.7**
+- **Prisma ORM 6**
+- **Supabase Auth** (Autenticação JWT)
+- **PostgreSQL** (Hospedado no Supabase)
+- **Jest & Supertest** (Testes de Integração)
 
-## 🚀 Stack Tecnológica
+---
 
-- **Node.js** — Ambiente de execução JavaScript
-- **Express.js** — Framework web para criação da API
-- **Prisma ORM** — Gerenciamento e modelagem do banco de dados
-- **Supabase (PostgreSQL)** — Banco de dados relacional
-- **TypeScript** — Desenvolvimento com tipagem estática
-- **pnpm** — Gerenciador de pacotes rápido e eficiente
+## 🔐 Autenticação
 
-## 🏗️ Estrutura do Projeto
+A API utiliza o **Supabase Auth**. Todas as rotas de finanças requerem um token JWT válido enviado no cabeçalho `Authorization`.
 
-```
-finance-backend/
-├── prisma/
-│   └── schema.prisma    # Definição do banco de dados
-├── src/
-│   ├── controllers/     # Lógica das rotas (FinanceController)
-│   ├── routes/          # Definição dos endpoints
-│   ├── lib/             # Clientes e utilitários (Prisma Client)
-│   └── index.ts         # Ponto de entrada do servidor
-├── .env                 # Variáveis de ambiente (não versionado)
-├── tsconfig.json        # Configuração do TypeScript
-└── package.json         # Dependências e scripts
-```
+**Formato do cabeçalho:**
+`Authorization: Bearer <seu_token_jwt>`
 
-## 🛠️ Instalação e Configuração
+---
 
-### 1. Clonar o repositório
+## 📑 Documentação da API
 
+### 🔑 Autenticação (`/api/auth`)
+
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `POST` | `/api/auth/signup` | Cria um novo usuário (E-mail, Senha, Nome) |
+| `POST` | `/api/auth/signin` | Autentica um usuário e retorna o token JWT |
+| `POST` | `/api/auth/signout` | Encerra a sessão do usuário (Requer Token) |
+| `GET` | `/api/auth/user` | Retorna os dados do usuário logado (Requer Token) |
+
+---
+
+### 💰 Finanças (`/api/finance`)
+*Todas as rotas abaixo requerem autenticação.*
+
+#### Dashboard
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `GET` | `/api/finance/dashboard/metrics` | Retorna saldo total, contas e transações recentes |
+
+#### Transações
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `GET` | `/api/finance/transactions` | Lista todas as transações do usuário |
+| `POST` | `/api/finance/transactions` | Cria uma transação (atualiza o saldo da conta) |
+| `PUT` | `/api/finance/transactions/:id` | Atualiza uma transação (ajusta o saldo da conta) |
+| `DELETE` | `/api/finance/transactions/:id` | Remove uma transação (reverte o saldo da conta) |
+
+---
+
+## 🛠️ Configuração e Instalação
+
+### 1. Clonar o Repositório
 ```bash
 git clone https://github.com/mobilecosta/finance-backend.git
 cd finance-backend
 ```
 
-### 2. Instalar dependências
-
+### 2. Instalar Dependências
 ```bash
 pnpm install
 ```
 
-### 3. Configurar variáveis de ambiente
-
-Crie um arquivo `.env` na raiz do projeto e adicione sua URL de conexão do Supabase:
-
+### 3. Variáveis de Ambiente
+Crie um arquivo `.env` na raiz do projeto:
 ```env
-DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres"
+DATABASE_URL="sua_url_do_postgresql_supabase"
+SUPABASE_URL="sua_url_do_projeto_supabase"
+SUPABASE_ANON_KEY="sua_chave_anonima_do_supabase"
 PORT=3000
+NODE_ENV=development
 ```
 
-### 4. Sincronizar o Banco de Dados
-
-Use o Prisma para criar as tabelas no Supabase:
-
+### 4. Banco de Dados
 ```bash
+npx prisma generate
 npx prisma db push
 ```
 
-### 5. Iniciar o servidor
+---
 
-```bash
-# Desenvolvimento
-pnpm dev
+## 📜 Scripts Disponíveis
 
-# Produção
-pnpm build
-pnpm start
-```
+| Comando | Descrição |
+|---|---|
+| `pnpm dev` | Inicia o servidor em modo de desenvolvimento |
+| `pnpm build` | Compila o projeto para JavaScript |
+| `pnpm start` | Inicia o servidor em produção |
+| `pnpm test` | Executa os testes de integração |
+| `pnpm test:coverage` | Executa testes e gera relatório de cobertura |
 
-## 🔌 Endpoints da API
+---
 
-### Finanças (`/api/finance`)
+## 🐳 Deploy na Vercel
 
-- `GET /dashboard?userId={id}`: Retorna saldo total, contas e transações recentes.
-- `GET /transactions?userId={id}`: Lista todas as transações do usuário.
-- `POST /transactions`: Cria uma nova transação (atualiza automaticamente o saldo da conta).
+O projeto está configurado para deploy automático na Vercel via arquivo `vercel.json`. Certifique-se de configurar as variáveis de ambiente no painel da Vercel.
 
-## 🗄️ Modelo de Dados
-
-O banco de dados é composto pelas seguintes entidades:
-
-- **User**: Gerenciamento de usuários.
-- **Account**: Contas financeiras (Ex: Carteira, Banco, Investimentos).
-- **Category**: Categorias de gastos e receitas.
-- **Transaction**: Registros financeiros vinculados a contas e categorias.
-
-## 🤝 Contribuição
-
-1. Faça um Fork do projeto
-2. Crie uma Branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Faça o Commit de suas alterações (`git commit -m 'feat: adiciona nova feature'`)
-4. Faça o Push para a Branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
-
+---
 Desenvolvido por [mobilecosta](https://github.com/mobilecosta)
