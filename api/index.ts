@@ -117,6 +117,17 @@ app.get('/tests/pdf', async (req: any, res: any) => {
   }
 });
 
+async function saveCoverageToDb(reportHtml: string) {
+  try {
+    await (prisma as any).test.create({
+      data: { reportHtml },
+    });
+    console.log('Relatório salvo no banco de dados.');
+  } catch (err) {
+    console.error('Erro ao salvar relatório no banco:', err);
+  }
+}
+
 app.get('/coverage', async (req: any, res: any) => {
   try {
     const latestTest = await (prisma as any).test.findFirst({
@@ -128,10 +139,18 @@ app.get('/coverage', async (req: any, res: any) => {
     }
   } catch (e) {}
 
-  const coverageFile = path.resolve(process.cwd(), 'coverage', 'lcov-report', 'index.html');
-  if (!fs.existsSync(coverageFile)) {
+  const lcovFile = path.resolve(process.cwd(), 'coverage', 'lcov-report', 'index.html');
+  const reportFile = path.resolve(process.cwd(), 'coverage', 'report.html');
+
+  const coverageFile = fs.existsSync(lcovFile) ? lcovFile : (fs.existsSync(reportFile) ? reportFile : null);
+  if (!coverageFile) {
     return res.status(404).send('Nenhum relatório de cobertura encontrado.');
   }
+
+  // Save to database so subsequent requests serve from DB
+  const html = fs.readFileSync(coverageFile, 'utf8');
+  saveCoverageToDb(html);
+
   res.sendFile(coverageFile);
 });
 

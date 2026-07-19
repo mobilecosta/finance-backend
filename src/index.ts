@@ -134,7 +134,18 @@ app.get('/tests/pdf', async (req, res) => {
   }
 });
 
-// Rota para o relatório detalhado LCOV (também pode usar o banco se necessário, mas mantendo estático para assets)
+async function saveCoverageToDb(reportHtml: string) {
+  try {
+    await prisma.test.create({
+      data: { reportHtml },
+    });
+    console.log('Relatório salvo no banco de dados.');
+  } catch (err) {
+    console.error('Erro ao salvar relatório no banco:', err);
+  }
+}
+
+// Rota para o relatório detalhado LCOV
 app.get('/coverage', async (req, res) => {
   try {
     const latestTest = await prisma.test.findFirst({
@@ -145,7 +156,43 @@ app.get('/coverage', async (req, res) => {
       return res.send(latestTest.reportHtml);
     }
   } catch (e) {}
-  res.sendFile(path.resolve(process.cwd(), 'coverage', 'lcov-report', 'index.html'));
+
+  const lcovFile = path.resolve(process.cwd(), 'coverage', 'lcov-report', 'index.html');
+  const reportFile = path.resolve(process.cwd(), 'coverage', 'report.html');
+
+  const coverageFile = fs.existsSync(lcovFile) ? lcovFile : (fs.existsSync(reportFile) ? reportFile : null);
+  if (!coverageFile) {
+    return res.status(404).send('Nenhum relatório de cobertura encontrado.');
+  }
+
+  // Save to database so subsequent requests serve from DB
+  const html = fs.readFileSync(coverageFile, 'utf8');
+  saveCoverageToDb(html);
+
+  res.sendFile(coverageFile);
+});
+
+app.post('/coverage', async (req, res) => {
+  try {
+    const { reportHtml, reportPdf } = req.body;
+
+    if (!reportHtml) {
+      return res.status(400).json({ message: 'reportHtml é obrigatório' });
+    }
+
+    const data: any = { reportHtml };
+
+    if (reportPdf) {
+      data.reportPdf = Buffer.from(reportPdf, 'base64');
+    }
+
+    const saved = await prisma.test.create({ data });
+
+    res.status(201).json({ message: 'Relatório salvo com sucesso', id: saved.id });
+  } catch (error) {
+    console.error('Erro ao salvar relatório:', error);
+    res.status(500).json({ message: 'Erro interno ao salvar relatório' });
+  }
 });
 
 app.use('/coverage', express.static(path.resolve(process.cwd(), 'coverage', 'lcov-report')));
