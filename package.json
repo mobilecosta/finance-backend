@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "pnpm test:coverage && tsc",
+    "build": "prisma migrate deploy && tsc",
     "postinstall": "prisma generate",
     "start": "node dist/index.js",
     "test": "NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest",

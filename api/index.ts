@@ -19,20 +19,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const prisma = new PrismaClient();
 
-// Função para executar migrações do Prisma
-async function runPrismaMigrations() {
-  console.log('Executando migrações do Prisma...');
-  try {
-    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-    console.log('Migrações do Prisma executadas com sucesso.');
-  } catch (error) {
-    console.error('Erro ao executar migrações do Prisma:', error);
-    // process.exit(1); // Não vamos encerrar o processo para permitir que o servidor tente rodar
-  }
-}
-
-// Executar migrações antes de iniciar o servidor
-runPrismaMigrations();
+// Migrations are handled during the build step in package.json
 const port = process.env.PORT || 3000;
 
 app.use(cors());
