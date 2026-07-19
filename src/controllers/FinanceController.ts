@@ -22,20 +22,52 @@ export class FinanceController {
     try {
       const prisma = await getPrisma();
       const accounts = await prisma.account.findMany({ where: { userId: String(userId) } });
-      const transactions = await prisma.transaction.findMany({
+      const allTransactions = await prisma.transaction.findMany({
         where: { userId: String(userId) },
+        include: { category: true },
         orderBy: { date: 'desc' },
-        take: 5
       });
 
       const totalBalance = accounts.reduce((acc: number, curr: any) => acc + Number(curr.balance), 0);
-      
+      const totalIncome = allTransactions.filter((t: any) => t.type === 'income').reduce((acc: number, t: any) => acc + Number(t.amount), 0);
+      const totalExpense = allTransactions.filter((t: any) => t.type === 'expense').reduce((acc: number, t: any) => acc + Number(t.amount), 0);
+      const transactionCount = allTransactions.length;
+      const recentTransactions = allTransactions.slice(0, 5);
+
+      const monthMap: Record<string, { income: number; expense: number }> = {};
+      for (const t of allTransactions) {
+        const month = t.date.substring(0, 7);
+        if (!monthMap[month]) monthMap[month] = { income: 0, expense: 0 };
+        if (t.type === 'income') monthMap[month].income += Number(t.amount);
+        else monthMap[month].expense += Number(t.amount);
+      }
+      const monthlyData = Object.entries(monthMap).map(([month, data]) => ({ month, ...data }));
+
+      const catMap: Record<string, { amount: number; count: number }> = {};
+      for (const t of allTransactions) {
+        const catName = t.category?.name || 'Sem categoria';
+        if (!catMap[catName]) catMap[catName] = { amount: 0, count: 0 };
+        catMap[catName].amount += Number(t.amount);
+        catMap[catName].count++;
+      }
+      const totalCatAmount = Object.values(catMap).reduce((s, c) => s + c.amount, 0);
+      const categoryDistribution = Object.entries(catMap).map(([category, data]) => ({
+        category,
+        amount: data.amount,
+        percentage: totalCatAmount > 0 ? Math.round((data.amount / totalCatAmount) * 100) : 0,
+      }));
+
       res.json({
         totalBalance,
-        accounts,
-        recentTransactions: transactions
+        totalIncome,
+        totalExpense,
+        transactionCount,
+        monthlyData,
+        categoryDistribution,
+        recentTransactions,
       });
     } catch (error) {
+      console.error('Dashboard error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   }

@@ -126,11 +126,16 @@ app.get('/coverage', async (req: any, res: any) => {
       res.setHeader('Content-Type', 'text/html');
       return res.send(latestTest.reportHtml);
     }
-    res.status(404).send('Nenhum relatório de cobertura encontrado.');
-  } catch (error) {
-    console.error('Erro ao buscar relatório:', error);
-    res.status(500).send('Erro interno ao buscar relatório.');
+  } catch (e) {}
+
+  const storageUrl = process.env.SUPABASE_URL
+    ? `${process.env.SUPABASE_URL}/storage/v1/object/public/coverage-reports/latest.html`
+    : null;
+  if (storageUrl) {
+    return res.redirect(storageUrl);
   }
+
+  res.status(404).send('Nenhum relatório de cobertura encontrado.');
 });
 
 app.post('/coverage', async (req: any, res: any) => {
