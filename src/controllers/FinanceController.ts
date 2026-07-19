@@ -3,8 +3,8 @@ import { getPrisma } from '../lib/prisma.js';
 
 export class FinanceController {
   async getDashboard(req: Request, res: Response) {
-    const { userId } = req.query;
-    if (!userId) return res.status(400).json({ error: 'userId is required' });
+    const user = (req as any).user;
+    const userId = user.id;
 
     try {
       const prisma = getPrisma();
@@ -45,7 +45,9 @@ export class FinanceController {
   }
 
   async createTransaction(req: Request, res: Response) {
-    const { userId, accountId, categoryId, type, amount, description, date, status } = req.body;
+    const user = (req as any).user;
+    const userId = user.id;
+    const { accountId, categoryId, type, amount, description, date, status } = req.body;
     
     try {
       const prisma = getPrisma();

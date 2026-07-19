@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import financeRoutes from './routes/finance.js';
+import authRoutes from './routes/auth.js';
 
 // dotenv.config(); // Já carregado via import 'dotenv/config'
 
@@ -36,6 +37,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend is running' });
 });
 
+app.use('/api/auth', authRoutes);
 app.use('/api/finance', financeRoutes);
 
 // Servir relatórios de cobertura de testes
