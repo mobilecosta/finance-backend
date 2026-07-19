@@ -109,12 +109,24 @@ const sendCoverageReport = async (_req: express.Request, res: express.Response) 
 
 app.get('/coverage', sendCoverageReport);
 app.get('/tests', sendCoverageReport);
+app.get('/reports', (req, res) => {
+  const reportPath = path.resolve(process.cwd(), 'coverage', 'report.html');
+  if (fs.existsSync(reportPath)) {
+    res.sendFile(reportPath);
+  } else {
+    res.status(404).send('Relatório de testes não encontrado. Execute `npm run test:coverage` primeiro.');
+  }
+});
+
+// Servir arquivos estáticos da cobertura para garantir que CSS/JS funcionem
+app.use('/coverage/lcov-report', express.static(path.resolve(process.cwd(), 'coverage', 'lcov-report')));
 
 app.get('/', (req, res) => {
   res.json({ 
     message: 'Finance Pro API', 
     docs: '/docs', 
     coverage: '/coverage',
+    reports: '/reports',
     tests: '/tests',
     health: '/health' 
   });
