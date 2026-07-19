@@ -6,6 +6,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+const { createClient } = await import('@supabase/supabase-js') as any;
+
 import financeRoutes from '../src/routes/finance.js';
 import authRoutes from '../src/routes/auth.js';
 
@@ -128,12 +130,23 @@ app.get('/coverage', async (req: any, res: any) => {
     }
   } catch (e) {}
 
-  const storageUrl = process.env.SUPABASE_URL
-    ? `${process.env.SUPABASE_URL}/storage/v1/object/public/coverage-reports/latest.html`
-    : null;
-  if (storageUrl) {
-    return res.redirect(storageUrl);
-  }
+  try {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    if (supabaseUrl && supabaseKey) {
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { data: files, error } = await supabase.storage
+        .from('coverage-reports')
+        .list('', { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
+
+      if (!error && files && files.length > 0) {
+        const { data: { publicUrl } } = supabase.storage
+          .from('coverage-reports')
+          .getPublicUrl(files[0].name);
+        return res.redirect(publicUrl);
+      }
+    }
+  } catch (e) {}
 
   res.status(404).send('Nenhum relatório de cobertura encontrado.');
 });
