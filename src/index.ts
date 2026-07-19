@@ -21,15 +21,13 @@ const prisma = new PrismaClient();
 
 // Função para executar migrações do Prisma
 async function runPrismaMigrations() {
-  if (process.env.NODE_ENV !== 'production' || process.env.RUN_MIGRATIONS === 'true') {
-    console.log('Executando migrações do Prisma...');
-    try {
-      execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-      console.log('Migrações do Prisma executadas com sucesso.');
-    } catch (error) {
-      console.error('Erro ao executar migrações do Prisma:', error);
-      // process.exit(1); // Não vamos encerrar o processo para permitir que o servidor tente rodar
-    }
+  console.log('Executando migrações do Prisma...');
+  try {
+    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+    console.log('Migrações do Prisma executadas com sucesso.');
+  } catch (error) {
+    console.error('Erro ao executar migrações do Prisma:', error);
+    // process.exit(1); // Não vamos encerrar o processo para permitir que o servidor tente rodar
   }
 }
 
