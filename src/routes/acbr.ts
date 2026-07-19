@@ -5,6 +5,6 @@ const router = Router();
 const ctrl = new AcbrController();
 
 router.post('/auth', ctrl.auth.bind(ctrl));
-router.all('/*', ctrl.proxy.bind(ctrl));
+router.use(ctrl.proxy.bind(ctrl));
 
 export default router;

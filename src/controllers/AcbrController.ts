@@ -10,6 +10,8 @@ type Req = {
   body?: any;
   query: any;
   params: any;
+  method: string;
+  path: string;
 };
 
 export class AcbrController {
@@ -33,7 +35,7 @@ export class AcbrController {
       return res.status(401).json({ message: 'Token de acesso não fornecido' });
     }
     const token = authHeader.slice(7);
-    const path = req.params[0] ? '/' + req.params[0] : '';
+    const path = req.path;
     try {
       const data = await proxyRequest(path, token, {
         method: req.method,

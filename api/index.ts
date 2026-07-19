@@ -10,6 +10,7 @@ const { createClient } = await import('@supabase/supabase-js') as any;
 
 import financeRoutes from '../src/routes/finance.js';
 import authRoutes from '../src/routes/auth.js';
+import acbrRoutes from '../src/routes/acbr.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -77,6 +78,7 @@ app.get('/health', (req: any, res: any) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/finance', financeRoutes);
+app.use('/api/acbr', acbrRoutes);
 
 app.get('/tests', async (req: any, res: any) => {
   try {
