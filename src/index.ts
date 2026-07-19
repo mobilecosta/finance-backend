@@ -28,10 +28,8 @@ async function runPrismaMigrations() {
       console.log('Migrações do Prisma executadas com sucesso.');
     } catch (error) {
       console.error('Erro ao executar migrações do Prisma:', error);
-      process.exit(1);
+      // process.exit(1); // Não vamos encerrar o processo para permitir que o servidor tente rodar
     }
-  } else {
-    console.log('Migrações do Prisma não executadas em ambiente de produção sem RUN_MIGRATIONS=true.');
   }
 }
 
