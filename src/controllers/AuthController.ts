@@ -8,7 +8,7 @@ type Res = {
 };
 
 type Req = {
-  headers: { authorization?: string };
+  headers: Record<string, any>;
   body?: any;
   query: any;
   params: any;
@@ -116,6 +116,39 @@ export class AuthController {
       if (error) return res.status(400).json({ message: error.message });
       res.json({ message: 'Logout realizado com sucesso' });
     } catch (error) {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+
+  async callback(req: Req, res: any) {
+    const { code, next } = req.query;
+
+    if (!code) {
+      return res.status(400).json({ message: 'Código de autenticação não fornecido' });
+    }
+
+    try {
+      const { data, error } = await auth.exchangeCodeForSession(code);
+
+      if (error) return res.status(400).json({ message: error.message });
+      if (!data.session) return res.status(400).json({ message: 'Erro ao criar sessão' });
+
+      const token = data.session.access_token;
+      const redirectTo = next || process.env.FRONTEND_URL || '/';
+
+      if (req.headers.accept?.includes('text/html')) {
+        return res.redirect(`${redirectTo}?token=${token}`);
+      }
+
+      res.json({
+        token,
+        user: {
+          id: data.user?.id,
+          email: data.user?.email,
+        },
+      });
+    } catch (error) {
+      console.error('Callback error:', error);
       res.status(500).json({ message: 'Internal server error' });
     }
   }

@@ -7,6 +7,7 @@ const authController = new AuthController();
 
 router.post('/signup', authController.signup);
 router.post('/signin', authController.signin);
+router.get('/callback', authController.callback);
 router.post('/signout', authMiddleware, authController.signout);
 router.get('/user', authMiddleware, authController.getUser);
 
