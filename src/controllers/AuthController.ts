@@ -15,12 +15,14 @@ type Req = {
   user?: any;
 };
 
+const auth = supabase.auth as any;
+
 export class AuthController {
   async signup(req: Req, res: Res) {
     const { email, password, fullName } = req.body;
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await auth.signUp({
         email,
         password,
         options: {
@@ -70,7 +72,7 @@ export class AuthController {
     const { email, password } = req.body;
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await auth.signInWithPassword({
         email,
         password,
       });
@@ -110,7 +112,7 @@ export class AuthController {
 
   async signout(req: Req, res: Res) {
     try {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await auth.signOut();
       if (error) return res.status(400).json({ message: error.message });
       res.json({ message: 'Logout realizado com sucesso' });
     } catch (error) {

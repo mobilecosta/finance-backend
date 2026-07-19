@@ -118,9 +118,9 @@ app.get('/coverage', async (req, res) => {
 
 app.use('/coverage', express.static(path.resolve(process.cwd(), 'coverage', 'lcov-report')));
 
-app.get('/reports', (req, res) => res.redirect('/tests'));
+app.get('/reports', (req: any, res: any) => res.redirect('/tests'));
 
-app.get('/', (req, res) => {
+app.get('/', (req: any, res: any) => {
   res.json({ 
     message: 'Finance Pro API', 
     docs: '/docs', 

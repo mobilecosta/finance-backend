@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 
+const auth = supabase.auth as any;
+
 type Req = {
   headers: { authorization?: string };
   body?: any;
@@ -24,7 +26,7 @@ export const authMiddleware = async (req: Req, res: Res, next: Next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const { data: { user }, error } = await auth.getUser(token);
 
     if (error || !user) {
       return res.status(401).json({ message: 'Token inválido ou expirado' });
