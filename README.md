@@ -99,5 +99,4 @@ O banco de dados é composto pelas seguintes entidades:
 4. Faça o Push para a Branch (`git push origin feature/nova-feature`)
 5. Abra um Pull Request
 
----
 Desenvolvido por [mobilecosta](https://github.com/mobilecosta)
