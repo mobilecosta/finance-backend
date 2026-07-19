@@ -13,7 +13,7 @@ export async function authenticate(clientId: string, clientSecret: string) {
   const res = await fetch(ACBR_AUTH_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body.toString(),
+    body: body.toString().replace(/\+/g, '%20'),
   });
 
   if (!res.ok) {
@@ -37,9 +37,11 @@ export async function proxyRequest(
   const baseUrl = options?.environment === 'producao' ? ACBR_PROD_URL : ACBR_HOM_URL;
   let url = `${baseUrl}${path}`;
   if (options?.query) {
-    const params = new URLSearchParams(options.query);
-    const qs = params.toString();
-    if (qs) url += '?' + qs;
+    const parts: string[] = [];
+    for (const key of Object.keys(options.query)) {
+      parts.push(key + '=' + encodeURIComponent(options.query[key]));
+    }
+    if (parts.length) url += '?' + parts.join('&');
   }
 
   const res = await fetch(url, {
