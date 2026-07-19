@@ -108,8 +108,7 @@ const sendCoverageReport = async (_req: express.Request, res: express.Response) 
 };
 
 app.get('/coverage', sendCoverageReport);
-app.get('/tests', sendCoverageReport);
-app.get('/reports', (req, res) => {
+app.get('/tests', (req, res) => {
   const reportPath = path.resolve(process.cwd(), 'coverage', 'report.html');
   if (fs.existsSync(reportPath)) {
     res.sendFile(reportPath);
