@@ -7,19 +7,12 @@ const reportPdfPath = path.join(process.cwd(), 'coverage', 'report.pdf');
 
 async function saveCoverageReport() {
   try {
-    if (!fs.existsSync(reportHtmlPath)) {
-      console.log('Relatório HTML não encontrado. Executando testes...');
-      execSync('npx jest --coverage --no-cache', {
-        stdio: 'inherit',
-        timeout: 180000,
-        env: { ...process.env, NODE_ENV: 'test', NODE_OPTIONS: '--experimental-vm-modules' },
-      });
-    }
-
-    if (!fs.existsSync(reportHtmlPath)) {
-      console.error('Erro: Relatório HTML não foi gerado em', reportHtmlPath);
-      process.exit(1);
-    }
+    console.log('Executando testes...');
+    execSync('npx jest --coverage --no-cache', {
+      stdio: 'inherit',
+      timeout: 180000,
+      env: { ...process.env, NODE_ENV: 'test', NODE_OPTIONS: '--experimental-vm-modules' },
+    });
 
     const reportHtml = fs.readFileSync(reportHtmlPath, 'utf8');
     let reportPdf: Buffer | null = null;
