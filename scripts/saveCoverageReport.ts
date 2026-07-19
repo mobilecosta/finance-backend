@@ -27,19 +27,23 @@ async function saveCoverageReport() {
     const reportHtml = fs.readFileSync(reportHtmlPath, 'utf8');
 
     if (supabaseKey) {
-      const supabase = createClient(supabaseUrl, supabaseKey);
-      const bucket = 'coverage-reports';
-      const fileName = 'latest.html';
+      try {
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        const bucket = 'coverage-reports';
+        const fileName = 'latest.html';
 
-      const { error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, reportHtml, { contentType: 'text/html', upsert: true });
+        const { error: uploadError } = await supabase.storage
+          .from(bucket)
+          .upload(fileName, reportHtml, { contentType: 'text/html', upsert: true });
 
-      if (uploadError) {
-        console.error('Erro ao fazer upload para Storage:', uploadError);
-      } else {
-        const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(fileName);
-        console.log('Relatório enviado para Storage:', publicUrl);
+        if (uploadError) {
+          console.warn('Aviso: não foi possível salvar no Storage:', uploadError.message);
+        } else {
+          const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(fileName);
+          console.log('Relatório enviado para Storage:', publicUrl);
+        }
+      } catch (storageError) {
+        console.warn('Aviso: erro ao acessar Storage Supabase — continuando build.');
       }
     } else {
       console.log('SUPABASE_SERVICE_ROLE não configurado — pulando Storage.');
