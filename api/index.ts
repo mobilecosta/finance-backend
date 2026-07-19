@@ -5,7 +5,6 @@ import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
 
 import financeRoutes from '../src/routes/finance.js';
 import authRoutes from '../src/routes/auth.js';
@@ -127,26 +126,11 @@ app.get('/coverage', async (req: any, res: any) => {
       res.setHeader('Content-Type', 'text/html');
       return res.send(latestTest.reportHtml);
     }
-  } catch (e) {}
-
-  try {
-    const scriptPath = path.resolve(process.cwd(), 'scripts', 'saveCoverageReport.ts');
-    const tsxBin = path.resolve(process.cwd(), 'node_modules', '.bin', 'tsx');
-    if (fs.existsSync(scriptPath)) {
-      execSync(`"${tsxBin}" "${scriptPath}"`, { stdio: 'inherit', timeout: 120000 });
-      const saved = await (prisma as any).test.findFirst({
-        orderBy: { createdAt: 'desc' },
-      });
-      if (saved) {
-        res.setHeader('Content-Type', 'text/html');
-        return res.send(saved.reportHtml);
-      }
-    }
-  } catch (err) {
-    console.error('Erro ao executar saveCoverageReport:', err);
+    res.status(404).send('Nenhum relatório de cobertura encontrado.');
+  } catch (error) {
+    console.error('Erro ao buscar relatório:', error);
+    res.status(500).send('Erro interno ao buscar relatório.');
   }
-
-  res.status(404).send('Nenhum relatório de cobertura encontrado.');
 });
 
 app.post('/coverage', async (req: any, res: any) => {
