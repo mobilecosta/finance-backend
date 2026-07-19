@@ -21,9 +21,17 @@ app.use(express.json());
 
 // Swagger Documentation (Load JSON manually to avoid ESM import issues on Vercel)
 try {
-  const swaggerPath = path.join(__dirname, 'swagger.json');
+  const swaggerPath = path.resolve(process.cwd(), 'src', 'swagger.json');
+  const swaggerPathDist = path.resolve(process.cwd(), 'dist', 'swagger.json');
+  
+  let swaggerDocument;
   if (fs.existsSync(swaggerPath)) {
-    const swaggerDocument = JSON.parse(fs.readFileSync(swaggerPath, 'utf8'));
+    swaggerDocument = JSON.parse(fs.readFileSync(swaggerPath, 'utf8'));
+  } else if (fs.existsSync(swaggerPathDist)) {
+    swaggerDocument = JSON.parse(fs.readFileSync(swaggerPathDist, 'utf8'));
+  }
+
+  if (swaggerDocument) {
     app.use('/docs', swaggerUi.serve);
     app.get('/docs', (req, res) => {
       res.send(swaggerUi.generateHTML(swaggerDocument));
