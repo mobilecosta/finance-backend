@@ -14,7 +14,21 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const { PrismaClient } = await import('@prisma/client') as any;
-const prisma = new PrismaClient();
+
+function getDatabaseUrl(): string {
+  const url = process.env.DATABASE_URL || '';
+  if (url.includes('pooler.supabase.com') && !url.includes('pgbouncer=true')) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}pgbouncer=true`;
+  }
+  return url;
+}
+
+const prisma = new PrismaClient({
+  datasources: {
+    db: { url: getDatabaseUrl() },
+  },
+});
 
 // Migrations are handled during the build step in package.json
 const port = process.env.PORT || 3000;
