@@ -7,7 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import financeRoutes from './routes/finance.js';
 
-dotenv.config();
+// dotenv.config(); // Já carregado via import 'dotenv/config'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

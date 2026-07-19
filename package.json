@@ -9,7 +9,8 @@
     "build": "tsc",
     "postinstall": "prisma generate",
     "start": "node dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "db:generate": "npx prisma generate",
     "db:migrate": "npx prisma migrate deploy",
     "db:push": "npx prisma db push",
@@ -29,9 +30,14 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.13.0",
+    "@types/supertest": "^7.2.1",
     "@types/swagger-ui-express": "^4.1.8",
+    "jest": "^30.4.2",
     "prisma": "^6.0.0",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.11",
     "tsx": "^4.23.1",
     "typescript": "^5.7.3"
   }
