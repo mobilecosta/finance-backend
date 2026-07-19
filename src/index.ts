@@ -92,6 +92,27 @@ app.get('/tests', (req, res) => {
   res.status(404).send('Relatório de testes não encontrado. Execute `npm run test:coverage` primeiro.');
 });
 
+app.get('/tests/pdf', async (req, res) => {
+  const pdfPath = path.resolve(process.cwd(), 'coverage', 'report.pdf');
+  const scriptPath = path.resolve(process.cwd(), 'scripts', 'generatePdf.ts');
+
+  try {
+    // Gera o PDF sob demanda usando tsx
+    console.log('Gerando PDF do relatório...');
+    execSync(`npx tsx ${scriptPath}`, { stdio: 'inherit' });
+
+    if (fs.existsSync(pdfPath)) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=report.pdf');
+      return res.sendFile(pdfPath);
+    }
+    res.status(500).send('Erro ao gerar o PDF.');
+  } catch (error) {
+    console.error('Erro na rota /tests/pdf:', error);
+    res.status(500).send('Erro interno ao processar o PDF.');
+  }
+});
+
 // Rota para o relatório detalhado LCOV
 app.use('/coverage', express.static(path.resolve(process.cwd(), 'coverage', 'lcov-report')));
 
@@ -105,6 +126,7 @@ app.get('/', (req, res) => {
     coverage: '/coverage',
     reports: '/reports',
     tests: '/tests',
+    tests_pdf: '/tests/pdf',
     health: '/health' 
   });
 });

@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">73.17% </span>
+                <span class="strong">63.82% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>30/41</span>
+                <span class='fraction'>30/47</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">42.85% </span>
+                <span class="strong">33.33% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>6/14</span>
+                <span class='fraction'>6/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">40% </span>
+                <span class="strong">33.33% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/5</span>
+                <span class='fraction'>2/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">73.17% </span>
+                <span class="strong">63.82% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>30/41</span>
+                <span class='fraction'>30/47</span>
             </div>
         
             
@@ -170,7 +170,25 @@
 <a name='L105'></a><a href='#L105'>105</a>
 <a name='L106'></a><a href='#L106'>106</a>
 <a name='L107'></a><a href='#L107'>107</a>
-<a name='L108'></a><a href='#L108'>108</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -189,6 +207,22 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -286,6 +320,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { PrismaClient } from '@prisma/client';
 &nbsp;
+import { execSync } from 'child_process';
 import financeRoutes from './routes/finance.js';
 import authRoutes from './routes/auth.js';
 &nbsp;
@@ -297,6 +332,22 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const prisma = new PrismaClient();
 &nbsp;
+// Função para executar migrações do Prisma
+async function <span class="fstat-no" title="function not covered" >runPrismaMigrations(</span>) {
+<span class="cstat-no" title="statement not covered" >  if (process.env.NODE_ENV !== 'production' || process.env.RUN_MIGRATIONS === 'true') {</span>
+<span class="cstat-no" title="statement not covered" >    console.log('Executando migrações do Prisma...');</span>
+<span class="cstat-no" title="statement not covered" >    try {</span>
+<span class="cstat-no" title="statement not covered" >      execSync('npx prisma migrate deploy', { stdio: 'inherit' });</span>
+<span class="cstat-no" title="statement not covered" >      console.log('Migrações do Prisma executadas com sucesso.');</span>
+    } catch (error) {
+<span class="cstat-no" title="statement not covered" >      console.error('Erro ao executar migrações do Prisma:', error);</span>
+      // process.exit(1); // Não vamos encerrar o processo para permitir que o servidor tente rodar
+    }
+  }
+}
+&nbsp;
+// Executar migrações antes de iniciar o servidor
+// runPrismaMigrations();
 const port = process.env.PORT || <span class="branch-1 cbranch-no" title="branch not covered" >3000;</span>
 &nbsp;
 app.use(cors());
@@ -391,7 +442,7 @@ export default app;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-19T02:41:28.012Z
+                at 2026-07-19T13:56:35.282Z
             </div>
         <script src="../prettify.js"></script>
         <script>
