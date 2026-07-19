@@ -32,9 +32,20 @@ try {
   }
 
   if (swaggerDocument) {
+    const CSS_URL = "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css";
+    const JS_URLS = [
+      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-bundle.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-standalone-preset.js"
+    ];
+
     app.use('/docs', swaggerUi.serve);
     app.get('/docs', (req, res) => {
-      res.send(swaggerUi.generateHTML(swaggerDocument));
+      res.send(
+        swaggerUi.generateHTML(swaggerDocument, {
+          customCssUrl: CSS_URL,
+          customJs: JS_URLS,
+        })
+      );
     });
   }
 } catch (error) {
