@@ -5,6 +5,9 @@ import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { PrismaClient } from '@prisma/client';
+
+import { execSync } from 'child_process';
 import financeRoutes from './routes/finance.js';
 import authRoutes from './routes/auth.js';
 
@@ -14,6 +17,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Função para executar migrações do Prisma
+async function runPrismaMigrations() {
+  if (process.env.NODE_ENV !== 'production' || process.env.RUN_MIGRATIONS === 'true') {
+    console.log('Executando migrações do Prisma...');
+    try {
+      execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+      console.log('Migrações do Prisma executadas com sucesso.');
+    } catch (error) {
+      console.error('Erro ao executar migrações do Prisma:', error);
+      process.exit(1);
+    }
+  } else {
+    console.log('Migrações do Prisma não executadas em ambiente de produção sem RUN_MIGRATIONS=true.');
+  }
+}
+
+// Executar migrações antes de iniciar o servidor
+runPrismaMigrations();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
@@ -62,20 +84,25 @@ app.use('/api/finance', financeRoutes);
 // Servir relatórios de cobertura de testes.
 // O `express.static` não usa `report.html` como arquivo padrão, por isso
 // a rota raiz precisa enviar o relatório explicitamente.
-const coverageDirectory = path.join(__dirname, '../coverage');
-const coverageReportPath = path.join(coverageDirectory, 'report.html');
+const sendCoverageReport = async (_req: express.Request, res: express.Response) => {
+  try {
+    const latestReport = await prisma.coverageReport.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
 
-const sendCoverageReport = (_req: express.Request, res: express.Response) => {
-  if (fs.existsSync(coverageReportPath)) {
-    res.sendFile(coverageReportPath);
-    return;
+    if (latestReport) {
+      res.setHeader('Content-Type', 'text/html');
+      res.send(latestReport.reportHtml);
+    } else {
+      res.status(404).send('Relatório de cobertura não encontrado no banco de dados. Execute `pnpm test:coverage` primeiro.');
+    }
+  } catch (error) {
+    console.error('Erro ao buscar relatório de cobertura do banco de dados:', error);
+    res.status(500).send('Erro interno do servidor ao buscar o relatório de cobertura.');
   }
-
-  res.status(404).send('Relatório de cobertura não encontrado. Execute `pnpm test:coverage` primeiro.');
 };
 
 app.get('/coverage', sendCoverageReport);
-app.use('/coverage', express.static(coverageDirectory));
 app.get('/tests', sendCoverageReport);
 
 app.get('/', (req, res) => {
