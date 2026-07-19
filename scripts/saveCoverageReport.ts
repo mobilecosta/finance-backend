@@ -1,15 +1,23 @@
-import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 
-const prisma = new PrismaClient();
 const reportHtmlPath = path.join(process.cwd(), 'coverage', 'report.html');
 const reportPdfPath = path.join(process.cwd(), 'coverage', 'report.pdf');
 
 async function saveCoverageReport() {
   try {
     if (!fs.existsSync(reportHtmlPath)) {
-      console.error('Erro: Relatório HTML não encontrado em', reportHtmlPath);
+      console.log('Relatório HTML não encontrado. Executando testes...');
+      execSync('npx jest --coverage --no-cache', {
+        stdio: 'inherit',
+        timeout: 180000,
+        env: { ...process.env, NODE_ENV: 'test', NODE_OPTIONS: '--experimental-vm-modules' },
+      });
+    }
+
+    if (!fs.existsSync(reportHtmlPath)) {
+      console.error('Erro: Relatório HTML não foi gerado em', reportHtmlPath);
       process.exit(1);
     }
 
@@ -21,26 +29,25 @@ async function saveCoverageReport() {
       console.log('Relatório PDF encontrado e será salvo.');
     }
 
-    await prisma.test.upsert({
-      where: { id: 1 },
-      update: { 
-        reportHtml: reportHtml,
-        reportPdf: reportPdf,
-        updatedAt: new Date()
-      },
-      create: { 
-        id: 1, 
-        reportHtml: reportHtml,
-        reportPdf: reportPdf
-      },
+    const { PrismaClient } = await import('@prisma/client') as any;
+    const dbUrl = process.env.DATABASE_URL || '';
+    const pgbouncerUrl = dbUrl.includes('pooler.supabase.com') && !dbUrl.includes('pgbouncer=true')
+      ? dbUrl + (dbUrl.includes('?') ? '&' : '?') + 'pgbouncer=true'
+      : dbUrl;
+
+    const prisma = new PrismaClient({
+      datasources: { db: { url: pgbouncerUrl } },
     });
 
-    console.log('Relatório de testes (HTML e PDF) salvo no banco de dados com sucesso.');
+    await prisma.test.create({
+      data: { reportHtml, reportPdf: reportPdf || undefined },
+    });
+
+    console.log('Relatório de testes salvo no banco de dados com sucesso.');
+    await prisma.$disconnect();
   } catch (error) {
     console.error('Erro ao salvar o relatório no banco de dados:', error);
     process.exit(1);
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
