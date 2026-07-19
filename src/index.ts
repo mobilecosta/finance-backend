@@ -83,42 +83,20 @@ app.use('/api/finance', financeRoutes);
 // Servir relatórios de cobertura de testes.
 // O `express.static` não usa `report.html` como arquivo padrão, por isso
 // a rota raiz precisa enviar o relatório explicitamente.
-const sendCoverageReport = async (_req: express.Request, res: express.Response) => {
-  try {
-    // Tenta buscar do banco de dados primeiro
-    const latestReport = await prisma.coverageReport.findFirst({
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (latestReport) {
-      res.setHeader('Content-Type', 'text/html');
-      return res.send(latestReport.reportHtml);
-    }
-  } catch (error) {
-    console.error('Erro ao buscar relatório de cobertura do banco de dados, tentando arquivo local:', error);
-  }
-
-  // Fallback para arquivo local se o banco falhar ou estiver vazio
-  const localReportPath = path.resolve(process.cwd(), 'coverage', 'report.html');
-  if (fs.existsSync(localReportPath)) {
-    return res.sendFile(localReportPath);
-  }
-
-  res.status(404).send('Relatório de cobertura não encontrado. Execute `npm run test:coverage` primeiro.');
-};
-
-app.get('/coverage', sendCoverageReport);
+// Rota para o relatório consolidado do Jest
 app.get('/tests', (req, res) => {
   const reportPath = path.resolve(process.cwd(), 'coverage', 'report.html');
   if (fs.existsSync(reportPath)) {
-    res.sendFile(reportPath);
-  } else {
-    res.status(404).send('Relatório de testes não encontrado. Execute `npm run test:coverage` primeiro.');
+    return res.sendFile(reportPath);
   }
+  res.status(404).send('Relatório de testes não encontrado. Execute `npm run test:coverage` primeiro.');
 });
 
-// Servir arquivos estáticos da cobertura para garantir que CSS/JS funcionem
-app.use('/coverage/lcov-report', express.static(path.resolve(process.cwd(), 'coverage', 'lcov-report')));
+// Rota para o relatório detalhado LCOV
+app.use('/coverage', express.static(path.resolve(process.cwd(), 'coverage', 'lcov-report')));
+
+// Redirecionamento amigável para a raiz da cobertura
+app.get('/reports', (req, res) => res.redirect('/tests'));
 
 app.get('/', (req, res) => {
   res.json({ 
