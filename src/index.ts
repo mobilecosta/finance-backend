@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
 import financeRoutes from './routes/finance.js';
 import authRoutes from './routes/auth.js';
+import acbrRoutes from './routes/acbr.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,6 +77,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/finance', financeRoutes);
+app.use('/api/acbr', acbrRoutes);
 
 // Servir relatórios de cobertura de testes.
 // O `express.static` não usa `report.html` como arquivo padrão, por isso
