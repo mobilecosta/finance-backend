@@ -7,52 +7,98 @@
   },
   "servers": [
     {
+      "url": "https://finance-backend-liard.vercel.app",
+      "description": "Servidor de Produção (Vercel)"
+    },
+    {
       "url": "http://localhost:3000",
-      "description": "Servidor de Desenvolvimento"
+      "description": "Servidor de Desenvolvimento Local"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
     }
   ],
   "paths": {
-    "/api/finance/dashboard": {
-      "get": {
-        "summary": "Obter dados do dashboard",
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
+    "/api/auth/signup": {
+      "post": {
+        "summary": "Criar novo usuário",
+        "tags": ["Autenticação"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" },
+                  "fullName": { "type": "string" }
+                }
+              }
             }
           }
-        ],
+        },
         "responses": {
-          "200": {
-            "description": "Dados do dashboard retornados com sucesso"
+          "201": { "description": "Usuário criado com sucesso" }
+        }
+      }
+    },
+    "/api/auth/signin": {
+      "post": {
+        "summary": "Autenticar usuário",
+        "tags": ["Autenticação"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
           }
+        },
+        "responses": {
+          "200": { "description": "Login realizado com sucesso" }
+        }
+      }
+    },
+    "/api/finance/dashboard/metrics": {
+      "get": {
+        "summary": "Obter métricas do dashboard",
+        "tags": ["Finanças"],
+        "responses": {
+          "200": { "description": "Métricas retornadas com sucesso" }
         }
       }
     },
     "/api/finance/transactions": {
       "get": {
-        "summary": "Listar transações",
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "summary": "Listar transações do usuário",
+        "tags": ["Finanças"],
         "responses": {
-          "200": {
-            "description": "Lista de transações"
-          }
+          "200": { "description": "Lista de transações" }
         }
       },
       "post": {
         "summary": "Criar nova transação",
+        "tags": ["Finanças"],
         "requestBody": {
           "required": true,
           "content": {
@@ -60,7 +106,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "userId": { "type": "string" },
                   "accountId": { "type": "integer" },
                   "categoryId": { "type": "integer" },
                   "type": { "type": "string", "enum": ["income", "expense"] },
@@ -74,24 +119,16 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "Transação criada"
-          }
+          "201": { "description": "Transação criada" }
         }
       }
     },
     "/api/finance/transactions/{id}": {
       "put": {
-        "summary": "Atualizar uma transação existente",
+        "summary": "Atualizar transação",
+        "tags": ["Finanças"],
         "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
         ],
         "requestBody": {
           "required": true,
@@ -113,33 +150,17 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "Transação atualizada com sucesso"
-          },
-          "404": {
-            "description": "Transação não encontrada"
-          }
+          "200": { "description": "Transação atualizada" }
         }
       },
       "delete": {
-        "summary": "Excluir uma transação",
+        "summary": "Excluir transação",
+        "tags": ["Finanças"],
         "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
         ],
         "responses": {
-          "200": {
-            "description": "Transação excluída com sucesso"
-          },
-          "404": {
-            "description": "Transação não encontrada"
-          }
+          "200": { "description": "Transação excluída" }
         }
       }
     }
