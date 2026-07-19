@@ -3,26 +3,41 @@ import fs from 'fs';
 import path from 'path';
 
 const prisma = new PrismaClient();
-const reportPath = path.join(process.cwd(), 'coverage', 'report.html');
+const reportHtmlPath = path.join(process.cwd(), 'coverage', 'report.html');
+const reportPdfPath = path.join(process.cwd(), 'coverage', 'report.pdf');
 
 async function saveCoverageReport() {
   try {
-    if (!fs.existsSync(reportPath)) {
-      console.error('Erro: Relatório de cobertura não encontrado em', reportPath);
+    if (!fs.existsSync(reportHtmlPath)) {
+      console.error('Erro: Relatório HTML não encontrado em', reportHtmlPath);
       process.exit(1);
     }
 
-    const reportHtml = fs.readFileSync(reportPath, 'utf8');
+    const reportHtml = fs.readFileSync(reportHtmlPath, 'utf8');
+    let reportPdf: Buffer | null = null;
 
-    await prisma.coverageReport.upsert({
-      where: { id: 1 }, // Assumindo que sempre haverá apenas um relatório de cobertura
-      update: { reportHtml: reportHtml },
-      create: { id: 1, reportHtml: reportHtml },
+    if (fs.existsSync(reportPdfPath)) {
+      reportPdf = fs.readFileSync(reportPdfPath);
+      console.log('Relatório PDF encontrado e será salvo.');
+    }
+
+    await prisma.test.upsert({
+      where: { id: 1 },
+      update: { 
+        reportHtml: reportHtml,
+        reportPdf: reportPdf,
+        updatedAt: new Date()
+      },
+      create: { 
+        id: 1, 
+        reportHtml: reportHtml,
+        reportPdf: reportPdf
+      },
     });
 
-    console.log('Relatório de cobertura salvo no banco de dados com sucesso.');
+    console.log('Relatório de testes (HTML e PDF) salvo no banco de dados com sucesso.');
   } catch (error) {
-    console.error('Erro ao salvar o relatório de cobertura no banco de dados:', error);
+    console.error('Erro ao salvar o relatório no banco de dados:', error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

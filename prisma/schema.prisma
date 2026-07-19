@@ -80,11 +80,12 @@ model Transaction {
   @@map("transactions")
 }
 
-model CoverageReport {
-  id        Int      @id @default(autoincrement())
-  reportHtml String   @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Test {
+  id          Int      @id @default(autoincrement())
+  reportHtml  String   @db.Text
+  reportPdf   Bytes?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@map("coverage_reports")
+  @@map("tests")
 }

@@ -83,22 +83,47 @@ app.use('/api/finance', financeRoutes);
 // Servir relatórios de cobertura de testes.
 // O `express.static` não usa `report.html` como arquivo padrão, por isso
 // a rota raiz precisa enviar o relatório explicitamente.
-// Rota para o relatório consolidado do Jest
-app.get('/tests', (req, res) => {
-  const reportPath = path.resolve(process.cwd(), 'coverage', 'report.html');
-  if (fs.existsSync(reportPath)) {
-    return res.sendFile(reportPath);
+// Rota para o relatório consolidado do Jest (vinda do banco de dados)
+app.get('/tests', async (req, res) => {
+  try {
+    const latestTest = await prisma.test.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (latestTest) {
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(latestTest.reportHtml);
+    }
+    
+    // Fallback para arquivo local
+    const reportPath = path.resolve(process.cwd(), 'coverage', 'report.html');
+    if (fs.existsSync(reportPath)) {
+      return res.sendFile(reportPath);
+    }
+    
+    res.status(404).send('Relatório de testes não encontrado no banco ou localmente.');
+  } catch (error) {
+    console.error('Erro ao buscar relatório de testes:', error);
+    res.status(500).send('Erro interno ao buscar relatório.');
   }
-  res.status(404).send('Relatório de testes não encontrado. Execute `npm run test:coverage` primeiro.');
 });
 
 app.get('/tests/pdf', async (req, res) => {
-  const pdfPath = path.resolve(process.cwd(), 'coverage', 'report.pdf');
-  const scriptPath = path.resolve(process.cwd(), 'scripts', 'generatePdf.ts');
-
   try {
-    // Gera o PDF sob demanda usando tsx
-    console.log('Gerando PDF do relatório...');
+    const latestTest = await prisma.test.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (latestTest && latestTest.reportPdf) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=report.pdf');
+      return res.send(latestTest.reportPdf);
+    }
+
+    // Se não houver no banco, tenta gerar localmente
+    const scriptPath = path.resolve(process.cwd(), 'scripts', 'generatePdf.ts');
+    const pdfPath = path.resolve(process.cwd(), 'coverage', 'report.pdf');
+    
     execSync(`npx tsx ${scriptPath}`, { stdio: 'inherit' });
 
     if (fs.existsSync(pdfPath)) {
@@ -106,14 +131,28 @@ app.get('/tests/pdf', async (req, res) => {
       res.setHeader('Content-Disposition', 'attachment; filename=report.pdf');
       return res.sendFile(pdfPath);
     }
-    res.status(500).send('Erro ao gerar o PDF.');
+    
+    res.status(404).send('PDF não encontrado e falha ao gerar.');
   } catch (error) {
     console.error('Erro na rota /tests/pdf:', error);
     res.status(500).send('Erro interno ao processar o PDF.');
   }
 });
 
-// Rota para o relatório detalhado LCOV
+// Rota para o relatório detalhado LCOV (também pode usar o banco se necessário, mas mantendo estático para assets)
+app.get('/coverage', async (req, res) => {
+  try {
+    const latestTest = await prisma.test.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
+    if (latestTest) {
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(latestTest.reportHtml);
+    }
+  } catch (e) {}
+  res.sendFile(path.resolve(process.cwd(), 'coverage', 'lcov-report', 'index.html'));
+});
+
 app.use('/coverage', express.static(path.resolve(process.cwd(), 'coverage', 'lcov-report')));
 
 // Redirecionamento amigável para a raiz da cobertura
