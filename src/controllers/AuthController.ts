@@ -1,9 +1,22 @@
-import { Request, Response } from 'express';
 import { supabase } from '../lib/supabase.js';
 import { getPrisma } from '../lib/prisma.js';
 
+type Res = {
+  status(code: number): Res;
+  json(body: any): void;
+  setHeader(name: string, value: string): void;
+};
+
+type Req = {
+  headers: { authorization?: string };
+  body?: any;
+  query: any;
+  params: any;
+  user?: any;
+};
+
 export class AuthController {
-  async signup(req: Request, res: Response) {
+  async signup(req: Req, res: Res) {
     const { email, password, fullName } = req.body;
 
     try {
@@ -20,7 +33,7 @@ export class AuthController {
       if (error) return res.status(400).json({ message: error.message });
       if (!data.user) return res.status(400).json({ message: 'Erro ao criar usuário' });
 
-      const prisma = getPrisma();
+      const prisma = await getPrisma();
       
       // Upsert user in our database
       const user = await prisma.user.upsert({
@@ -53,7 +66,7 @@ export class AuthController {
     }
   }
 
-  async signin(req: Request, res: Response) {
+  async signin(req: Req, res: Res) {
     const { email, password } = req.body;
 
     try {
@@ -65,7 +78,7 @@ export class AuthController {
       if (error) return res.status(401).json({ message: error.message });
       if (!data.user) return res.status(401).json({ message: 'Credenciais inválidas' });
 
-      const prisma = getPrisma();
+      const prisma = await getPrisma();
       
       const user = await prisma.user.upsert({
         where: { openId: data.user.id },
@@ -95,7 +108,7 @@ export class AuthController {
     }
   }
 
-  async signout(req: Request, res: Response) {
+  async signout(req: Req, res: Res) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) return res.status(400).json({ message: error.message });
@@ -105,13 +118,12 @@ export class AuthController {
     }
   }
 
-  async getUser(req: Request, res: Response) {
-    // This assumes the user is already authenticated via middleware
-    const user = (req as any).user;
+  async getUser(req: Req, res: Res) {
+    const user = req.user;
     if (!user) return res.status(401).json({ message: 'Não autenticado' });
 
     try {
-      const prisma = getPrisma();
+      const prisma = await getPrisma();
       const dbUser = await prisma.user.findUnique({
         where: { openId: user.id },
       });

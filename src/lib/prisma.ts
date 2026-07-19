@@ -1,17 +1,19 @@
-import { PrismaClient } from '@prisma/client';
+let prisma: any;
+let initPromise: Promise<void> | null = null;
 
-let prisma: PrismaClient;
+async function initPrisma() {
+  const { PrismaClient } = await import('@prisma/client') as any;
+  prisma = new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
+  });
+}
 
-export function getPrisma() {
+export async function getPrisma() {
   if (!prisma) {
-    try {
-      prisma = new PrismaClient({
-        log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
-      });
-    } catch (error) {
-      console.error('Prisma initialization error:', error);
-      throw error;
+    if (!initPromise) {
+      initPromise = initPrisma();
     }
+    await initPromise;
   }
   return prisma;
 }

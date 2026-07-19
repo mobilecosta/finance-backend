@@ -1,13 +1,26 @@
-import { Request, Response } from 'express';
 import { getPrisma } from '../lib/prisma.js';
 
+type Res = {
+  status(code: number): Res;
+  json(body: any): void;
+  setHeader(name: string, value: string): void;
+};
+
+type Req = {
+  headers: { authorization?: string };
+  body?: any;
+  query: any;
+  params: any;
+  user?: any;
+};
+
 export class FinanceController {
-  async getDashboard(req: Request, res: Response) {
-    const user = (req as any).user;
+  async getDashboard(req: Req, res: Res) {
+    const user = req.user;
     const userId = user.id;
 
     try {
-      const prisma = getPrisma();
+      const prisma = await getPrisma();
       const accounts = await prisma.account.findMany({ where: { userId: String(userId) } });
       const transactions = await prisma.transaction.findMany({
         where: { userId: String(userId) },
@@ -15,7 +28,7 @@ export class FinanceController {
         take: 5
       });
 
-      const totalBalance = accounts.reduce((acc, curr) => acc + Number(curr.balance), 0);
+      const totalBalance = accounts.reduce((acc: number, curr: any) => acc + Number(curr.balance), 0);
       
       res.json({
         totalBalance,
@@ -27,12 +40,12 @@ export class FinanceController {
     }
   }
 
-  async getTransactions(req: Request, res: Response) {
+  async getTransactions(req: Req, res: Res) {
     const { userId } = req.query;
     if (!userId) return res.status(400).json({ error: 'userId is required' });
 
     try {
-      const prisma = getPrisma();
+      const prisma = await getPrisma();
       const transactions = await prisma.transaction.findMany({
         where: { userId: String(userId) },
         include: { category: true, account: true },
@@ -44,13 +57,13 @@ export class FinanceController {
     }
   }
 
-  async createTransaction(req: Request, res: Response) {
-    const user = (req as any).user;
+  async createTransaction(req: Req, res: Res) {
+    const user = req.user;
     const userId = user.id;
     const { accountId, categoryId, type, amount, description, date, status } = req.body;
     
     try {
-      const prisma = getPrisma();
+      const prisma = await getPrisma();
       const transaction = await prisma.transaction.create({
         data: {
           userId,
@@ -64,7 +77,6 @@ export class FinanceController {
         }
       });
 
-      // Update account balance
       const modifier = type === 'income' ? 1 : -1;
       await prisma.account.update({
         where: { id: accountId },
@@ -81,14 +93,13 @@ export class FinanceController {
     }
   }
 
-  async updateTransaction(req: Request, res: Response) {
+  async updateTransaction(req: Req, res: Res) {
     const { id } = req.params;
     const { accountId, categoryId, type, amount, description, date, status } = req.body;
 
     try {
-      const prisma = getPrisma();
+      const prisma = await getPrisma();
       
-      // Get old transaction to adjust balance
       const oldTransaction = await prisma.transaction.findUnique({
         where: { id: Number(id) }
       });
@@ -110,7 +121,6 @@ export class FinanceController {
         }
       });
 
-      // Adjust balance if amount or type changed
       if (oldTransaction.accountId === accountId) {
         const oldModifier = oldTransaction.type === 'income' ? 1 : -1;
         const newModifier = type === 'income' ? 1 : -1;
@@ -128,11 +138,11 @@ export class FinanceController {
     }
   }
 
-  async deleteTransaction(req: Request, res: Response) {
+  async deleteTransaction(req: Req, res: Res) {
     const { id } = req.params;
 
     try {
-      const prisma = getPrisma();
+      const prisma = await getPrisma();
       const transaction = await prisma.transaction.findUnique({
         where: { id: Number(id) }
       });
@@ -145,7 +155,6 @@ export class FinanceController {
         where: { id: Number(id) }
       });
 
-      // Revert balance
       const modifier = transaction.type === 'income' ? -1 : 1;
       await prisma.account.update({
         where: { id: transaction.accountId },

@@ -5,18 +5,15 @@ import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { PrismaClient } from '@prisma/client';
-
 import { execSync } from 'child_process';
 import financeRoutes from './routes/finance.js';
 import authRoutes from './routes/auth.js';
-
-// dotenv.config(); // Já carregado via import 'dotenv/config'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const { PrismaClient } = await import('@prisma/client') as any;
 const prisma = new PrismaClient();
 
 // Função para executar migrações do Prisma

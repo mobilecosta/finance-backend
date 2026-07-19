@@ -1,11 +1,10 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { PrismaClient } from '@prisma/client';
 
 import financeRoutes from '../src/routes/finance.js';
 import authRoutes from '../src/routes/auth.js';
@@ -14,6 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const { PrismaClient } = await import('@prisma/client') as any;
 const prisma = new PrismaClient();
 
 // Migrations are handled during the build step in package.json
@@ -42,7 +42,7 @@ try {
     ];
 
     app.use('/docs', swaggerUi.serve);
-    app.get('/docs', (req: Request, res: Response) => {
+    app.get('/docs', (req, res) => {
       res.send(
         swaggerUi.generateHTML(swaggerDocument, {
           customCssUrl: CSS_URL,
@@ -55,14 +55,14 @@ try {
   console.error('Failed to load swagger.json', error);
 }
 
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend is running' });
 });
 
 app.use('/api/auth', authRoutes);
 app.use('/api/finance', financeRoutes);
 
-app.get('/tests', async (req: Request, res: Response) => {
+app.get('/tests', async (req: any, res: any) => {
   try {
     const latestTest = await (prisma as any).test.findFirst({
       orderBy: { createdAt: 'desc' },
@@ -85,7 +85,7 @@ app.get('/tests', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/tests/pdf', async (req: Request, res: Response) => {
+app.get('/tests/pdf', async (req, res) => {
   try {
     const latestTest = await (prisma as any).test.findFirst({
       orderBy: { createdAt: 'desc' },
@@ -103,7 +103,7 @@ app.get('/tests/pdf', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/coverage', async (req: Request, res: Response) => {
+app.get('/coverage', async (req, res) => {
   try {
     const latestTest = await (prisma as any).test.findFirst({
       orderBy: { createdAt: 'desc' },
@@ -118,9 +118,9 @@ app.get('/coverage', async (req: Request, res: Response) => {
 
 app.use('/coverage', express.static(path.resolve(process.cwd(), 'coverage', 'lcov-report')));
 
-app.get('/reports', (req: Request, res: Response) => res.redirect('/tests'));
+app.get('/reports', (req, res) => res.redirect('/tests'));
 
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (req, res) => {
   res.json({ 
     message: 'Finance Pro API', 
     docs: '/docs', 

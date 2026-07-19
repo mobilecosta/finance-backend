@@ -1,7 +1,20 @@
-import { Request, Response, NextFunction } from 'express';
 import { supabase } from '../lib/supabase.js';
 
-export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+type Req = {
+  headers: { authorization?: string };
+  body?: any;
+  user?: any;
+};
+
+type Res = {
+  status(code: number): Res;
+  json(body: any): void;
+  setHeader(name: string, value: string): void;
+};
+
+type Next = (err?: any) => void;
+
+export const authMiddleware = async (req: Req, res: Res, next: Next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -17,8 +30,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       return res.status(401).json({ message: 'Token inválido ou expirado' });
     }
 
-    // Attach user to request
-    (req as any).user = user;
+    req.user = user;
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Erro na autenticação' });
