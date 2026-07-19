@@ -1,17 +1,16 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { PrismaClient } from '@prisma/client';
+import pkg from '@prisma/client';
 
-import { execSync } from 'child_process';
 import financeRoutes from '../src/routes/finance.js';
 import authRoutes from '../src/routes/auth.js';
 
-// dotenv.config(); // Já carregado via import 'dotenv/config'
+const { PrismaClient } = pkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +24,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Swagger Documentation (Load JSON manually to avoid ESM import issues on Vercel)
+// Swagger Documentation
 try {
   const swaggerPath = path.resolve(process.cwd(), 'src', 'swagger.json');
   const swaggerPathDist = path.resolve(process.cwd(), 'dist', 'swagger.json');
@@ -45,7 +44,7 @@ try {
     ];
 
     app.use('/docs', swaggerUi.serve);
-    app.get('/docs', (req, res) => {
+    app.get('/docs', (req: Request, res: Response) => {
       res.send(
         swaggerUi.generateHTML(swaggerDocument, {
           customCssUrl: CSS_URL,
@@ -58,20 +57,16 @@ try {
   console.error('Failed to load swagger.json', error);
 }
 
-app.get('/health', (req, res) => {
+app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Backend is running' });
 });
 
 app.use('/api/auth', authRoutes);
 app.use('/api/finance', financeRoutes);
 
-// Servir relatórios de cobertura de testes.
-// O `express.static` não usa `report.html` como arquivo padrão, por isso
-// a rota raiz precisa enviar o relatório explicitamente.
-// Rota para o relatório consolidado do Jest (vinda do banco de dados)
-app.get('/tests', async (req, res) => {
+app.get('/tests', async (req: Request, res: Response) => {
   try {
-    const latestTest = await prisma.test.findFirst({
+    const latestTest = await (prisma as any).test.findFirst({
       orderBy: { createdAt: 'desc' },
     });
 
@@ -80,7 +75,6 @@ app.get('/tests', async (req, res) => {
       return res.send(latestTest.reportHtml);
     }
     
-    // Fallback para arquivo local
     const reportPath = path.resolve(process.cwd(), 'coverage', 'report.html');
     if (fs.existsSync(reportPath)) {
       return res.sendFile(reportPath);
@@ -93,9 +87,9 @@ app.get('/tests', async (req, res) => {
   }
 });
 
-app.get('/tests/pdf', async (req, res) => {
+app.get('/tests/pdf', async (req: Request, res: Response) => {
   try {
-    const latestTest = await prisma.test.findFirst({
+    const latestTest = await (prisma as any).test.findFirst({
       orderBy: { createdAt: 'desc' },
     });
 
@@ -104,30 +98,16 @@ app.get('/tests/pdf', async (req, res) => {
       res.setHeader('Content-Disposition', 'attachment; filename=report.pdf');
       return res.send(latestTest.reportPdf);
     }
-
-    // Se não houver no banco, tenta gerar localmente
-    const scriptPath = path.resolve(process.cwd(), 'scripts', 'generatePdf.ts');
-    const pdfPath = path.resolve(process.cwd(), 'coverage', 'report.pdf');
-    
-    execSync(`npx tsx ${scriptPath}`, { stdio: 'inherit' });
-
-    if (fs.existsSync(pdfPath)) {
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'attachment; filename=report.pdf');
-      return res.sendFile(pdfPath);
-    }
-    
-    res.status(404).send('PDF não encontrado e falha ao gerar.');
+    res.status(404).send('PDF não encontrado.');
   } catch (error) {
     console.error('Erro na rota /tests/pdf:', error);
     res.status(500).send('Erro interno ao processar o PDF.');
   }
 });
 
-// Rota para o relatório detalhado LCOV (também pode usar o banco se necessário, mas mantendo estático para assets)
-app.get('/coverage', async (req, res) => {
+app.get('/coverage', async (req: Request, res: Response) => {
   try {
-    const latestTest = await prisma.test.findFirst({
+    const latestTest = await (prisma as any).test.findFirst({
       orderBy: { createdAt: 'desc' },
     });
     if (latestTest) {
@@ -140,10 +120,9 @@ app.get('/coverage', async (req, res) => {
 
 app.use('/coverage', express.static(path.resolve(process.cwd(), 'coverage', 'lcov-report')));
 
-// Redirecionamento amigável para a raiz da cobertura
-app.get('/reports', (req, res) => res.redirect('/tests'));
+app.get('/reports', (req: Request, res: Response) => res.redirect('/tests'));
 
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response) => {
   res.json({ 
     message: 'Finance Pro API', 
     docs: '/docs', 
@@ -155,7 +134,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Export for Vercel
 export default app;
 
 if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
