@@ -113,7 +113,38 @@ app.get('/coverage', async (req: any, res: any) => {
       return res.send(latestTest.reportHtml);
     }
   } catch (e) {}
-  res.sendFile(path.resolve(process.cwd(), 'coverage', 'lcov-report', 'index.html'));
+
+  const coverageFile = path.resolve(process.cwd(), 'coverage', 'lcov-report', 'index.html');
+  if (!fs.existsSync(coverageFile)) {
+    return res.status(404).send('Nenhum relatório de cobertura encontrado.');
+  }
+  res.sendFile(coverageFile);
+});
+
+app.post('/coverage', async (req: any, res: any) => {
+  try {
+    const { reportHtml, reportPdf } = req.body;
+
+    if (!reportHtml) {
+      return res.status(400).json({ message: 'reportHtml é obrigatório' });
+    }
+
+    const data: any = {
+      reportHtml,
+      updatedAt: new Date(),
+    };
+
+    if (reportPdf) {
+      data.reportPdf = Buffer.from(reportPdf, 'base64');
+    }
+
+    const saved = await (prisma as any).test.create({ data });
+
+    res.status(201).json({ message: 'Relatório salvo com sucesso', id: saved.id });
+  } catch (error) {
+    console.error('Erro ao salvar relatório:', error);
+    res.status(500).json({ message: 'Erro interno ao salvar relatório' });
+  }
 });
 
 app.use('/coverage', express.static(path.resolve(process.cwd(), 'coverage', 'lcov-report')));
