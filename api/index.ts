@@ -80,6 +80,37 @@ app.use('/api/auth', authRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/acbr', acbrRoutes);
 
+// Listagem de testes para o frontend
+app.get('/api/tests', async (req: any, res: any) => {
+  try {
+    const tests = await (prisma as any).test.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    });
+    res.json(tests);
+  } catch (error) {
+    console.error('Erro ao listar testes:', error);
+    res.status(500).json({ error: 'Erro interno ao listar testes.' });
+  }
+});
+
+// Detalhes de um teste específico
+app.get('/api/tests/:id', async (req: any, res: any) => {
+  try {
+    const test = await (prisma as any).test.findUnique({
+      where: { id: parseInt(req.params.id) }
+    });
+    if (!test) return res.status(404).json({ error: 'Teste não encontrado' });
+    res.json(test);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar teste' });
+  }
+});
+
 app.get('/tests', async (req: any, res: any) => {
   try {
     const latestTest = await (prisma as any).test.findFirst({

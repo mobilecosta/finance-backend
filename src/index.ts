@@ -83,6 +83,39 @@ app.use('/api/acbr', acbrRoutes);
 // O `express.static` não usa `report.html` como arquivo padrão, por isso
 // a rota raiz precisa enviar o relatório explicitamente.
 // Rota para o relatório consolidado do Jest (vinda do banco de dados)
+// Listagem de testes para o frontend
+app.get('/api/tests', async (req, res) => {
+  try {
+    const tests = await prisma.test.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        // Não enviamos o HTML gigante na listagem para performance, 
+        // a menos que o frontend peça um específico
+      }
+    });
+    res.json(tests);
+  } catch (error) {
+    console.error('Erro ao listar testes:', error);
+    res.status(500).json({ error: 'Erro interno ao listar testes.' });
+  }
+});
+
+// Detalhes de um teste específico
+app.get('/api/tests/:id', async (req, res) => {
+  try {
+    const test = await prisma.test.findUnique({
+      where: { id: parseInt(req.params.id) }
+    });
+    if (!test) return res.status(404).json({ error: 'Teste não encontrado' });
+    res.json(test);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar teste' });
+  }
+});
+
 app.get('/tests', async (req, res) => {
   try {
     const latestTest = await prisma.test.findFirst({
