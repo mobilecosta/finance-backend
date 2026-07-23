@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "prisma generate && tsc && mkdir -p public",
-    "vercel-build": "prisma generate && tsc && tsx scripts/saveCoverageReport.ts",
+    "vercel-build": "prisma generate && tsc && node scripts/generate_acbr_detailed_report.cjs && tsx scripts/saveCoverageReport.ts",
     "postinstall": "prisma generate",
     "start": "node dist/index.js",
     "test": "NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest",

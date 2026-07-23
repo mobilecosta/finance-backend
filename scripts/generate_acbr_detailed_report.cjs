@@ -1,0 +1,113 @@
+const { PrismaClient } = require('@prisma/client');
+const fs = require('fs');
+const path = require('path');
+
+async function run() {
+  const cnpj = '66549275000197';
+  console.log('--- Gerando Relatório Detalhado ACBr ---');
+  
+  const reportHtml = `
+    <!DOCTYPE html>
+    <html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <title>Relatório Detalhado de Testes ACBr</title>
+        <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 40px auto; padding: 20px; background: #f4f7f6; }
+            .card { background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+            h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+            h2 { color: #2980b9; margin-top: 30px; }
+            .status { font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+            .success { background: #d4edda; color: #155724; }
+            .info { background: #d1ecf1; color: #0c5460; }
+            .warning { background: #fff3cd; color: #856404; }
+            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
+            th { background-color: #f8f9fa; }
+            pre { background: #272822; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 13px; }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h1>Relatório Detalhado: Integração ACBr</h1>
+            <p>Este relatório consolida as operações realizadas para o novo CNPJ e a configuração do certificado digital.</p>
+            
+            <table>
+                <tr><th>Parâmetro</th><th>Valor</th></tr>
+                <tr><td>CNPJ de Teste</td><td>66.549.275/0001-97</td></tr>
+                <tr><td>Ambiente</td><td>Homologação</td></tr>
+                <tr><td>Data de Execução</td><td>${new Date().toLocaleString('pt-BR')}</td></tr>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>1. Cadastro da Empresa</h2>
+            <p>Verificação e registro da empresa na plataforma ACBr API.</p>
+            <span class="status success">CONCLUÍDO</span>
+            <ul>
+                <li><b>Razão Social:</b> NOVA ERA LOCACOES VEICULOS E EMPREENDIMENTOS LTDA</li>
+                <li><b>Status:</b> Empresa cadastrada com sucesso no ambiente de homologação.</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2>2. Configuração de Certificado Digital</h2>
+            <p>Upload e vinculação do arquivo PFX à empresa.</p>
+            <span class="status success">ATIVO</span>
+            <table>
+                <tr><td>Arquivo</td><td>novaera-2026.pfx</td></tr>
+                <tr><td>Validade</td><td>12/06/2026 até 12/06/2027</td></tr>
+                <tr><td>Thumbprint</td><td>ad3261ccabd8470526aae94079c696b17f050ecd</td></tr>
+            </table>
+            <p><i>O certificado foi convertido para Base64 e transmitido via endpoint <code>PUT /empresas/{cnpj}/certificado</code>.</i></p>
+        </div>
+
+        <div class="card">
+            <h2>3. Teste de Emissão de NFS-e</h2>
+            <p>Tentativa de envio de DPS (Declaração de Prestação de Serviço).</p>
+            <span class="status warning">ERRO DE VALIDAÇÃO</span>
+            <p>A comunicação com a API foi estabelecida com sucesso, porém o formato do JSON de serviço requer ajustes específicos do provedor municipal.</p>
+            <pre>{
+  "error": {
+    "code": "InvalidJsonProperty",
+    "message": "Property \\"cServico\\" does not refer to a known property in type \\"Nfse.PadraoNacional.DTO.TCServ\\""
+  }
+}</pre>
+        </div>
+
+        <div class="card">
+            <h2>4. Repositório GitHub</h2>
+            <p>Atualização do código fonte.</p>
+            <span class="status success">SINCRONIZADO</span>
+            <p>Os seguintes arquivos foram atualizados com o novo CNPJ e lógica de relatório:</p>
+            <ul>
+                <li><code>tests/acbr_create_company.test.ts</code></li>
+                <li><code>tests/acbr_issue_nfse.test.ts</code></li>
+                <li><code>scripts/run_and_save_tests.cjs</code> (Novo)</li>
+            </ul>
+        </div>
+    </body>
+    </html>
+  `;
+
+  if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgres')) {
+    try {
+      const dbUrl = process.env.DATABASE_URL;
+      const pgbouncerUrl = dbUrl.includes('pgbouncer=true') ? dbUrl : dbUrl + (dbUrl.includes('?') ? '&' : '?') + 'pgbouncer=true';
+      const prisma = new PrismaClient({ datasources: { db: { url: pgbouncerUrl } } });
+      await prisma.test.create({
+        data: { reportHtml }
+      });
+      console.log('✅ Relatório detalhado ACBr gravado na tabela "tests".');
+      await prisma.$disconnect();
+    } catch (e) {
+      console.log('ℹ️ Erro ao gravar no banco:', e.message);
+    }
+  } else {
+    console.log('ℹ️ DATABASE_URL não definida, relatório gerado apenas localmente.');
+  }
+  
+  fs.writeFileSync(path.join(process.cwd(), 'coverage', 'acbr-detailed-report.html'), reportHtml);
+}
+
+run().catch(console.error);

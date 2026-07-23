@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for src/lib/prisma.ts</title>
+    <title>Code coverage report for src/middlewares/auth.ts</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/lib</a> prisma.ts</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/middlewares</a> auth.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">84.61% </span>
+                <span class="strong">15.38% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>11/13</span>
+                <span class='fraction'>2/13</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">42.85% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>6/14</span>
+                <span class='fraction'>0/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>3/3</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">84.61% </span>
+                <span class="strong">15.38% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>11/13</span>
+                <span class='fraction'>2/13</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -94,68 +94,95 @@
 <a name='L29'></a><a href='#L29'>29</a>
 <a name='L30'></a><a href='#L30'>30</a>
 <a name='L31'></a><a href='#L31'>31</a>
-<a name='L32'></a><a href='#L32'>32</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">let prisma: any;
-let initPromise: Promise&lt;void&gt; | null = null;
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { supabase } from '../lib/supabase.js';
 &nbsp;
-function getDatabaseUrl(): string {
-  const url = process.env.DATABASE_URL || <span class="branch-1 cbranch-no" title="branch not covered" >'';</span>
-  <span class="missing-if-branch" title="if path not taken" >I</span>if (url.includes('pooler.supabase.com') &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >!url.includes('pgbouncer=true'))</span> {
-    const separator = <span class="cstat-no" title="statement not covered" >url.includes('?') ? '&amp;' : '?';</span>
-<span class="cstat-no" title="statement not covered" >    return `${url}${separator}pgbouncer=true`;</span>
+const auth = supabase.auth as any;
+&nbsp;
+type Req = {
+  headers: { authorization?: string };
+  body?: any;
+  user?: any;
+};
+&nbsp;
+type Res = {
+  status(code: number): Res;
+  json(body: any): void;
+  setHeader(name: string, value: string): void;
+};
+&nbsp;
+type Next = (err?: any) =&gt; void;
+&nbsp;
+export const authMiddleware = <span class="fstat-no" title="function not covered" >async </span>(req: Req, res: Res, next: Next) =&gt; {
+  const authHeader = <span class="cstat-no" title="statement not covered" >req.headers.authorization;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  if (!authHeader) {</span>
+<span class="cstat-no" title="statement not covered" >    return res.status(401).json({ message: 'Token não fornecido' });</span>
   }
-  return url;
-}
 &nbsp;
-async function initPrisma() {
-  const { PrismaClient } = await import('@prisma/client') as any;
-  prisma = new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? <span class="branch-0 cbranch-no" title="branch not covered" >['query', 'info', 'warn', 'error'] </span>: ['error'],
-    datasources: {
-      db: { url: getDatabaseUrl() },
-    },
-  });
-}
+  const token = <span class="cstat-no" title="statement not covered" >authHeader.split(' ')[1];</span>
 &nbsp;
-export async function getPrisma() {
-  <span class="missing-if-branch" title="else path not taken" >E</span>if (!prisma) {
-    <span class="missing-if-branch" title="else path not taken" >E</span>if (!initPromise) {
-      initPromise = initPrisma();
+<span class="cstat-no" title="statement not covered" >  try {</span>
+    const { data: { user }, error } = <span class="cstat-no" title="statement not covered" >await auth.getUser(token);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    if (error || !user) {</span>
+<span class="cstat-no" title="statement not covered" >      return res.status(401).json({ message: 'Token inválido ou expirado' });</span>
     }
-    await initPromise;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    req.user = user;</span>
+<span class="cstat-no" title="statement not covered" >    next();</span>
+  } catch (error) {
+<span class="cstat-no" title="statement not covered" >    return res.status(401).json({ message: 'Erro na autenticação' });</span>
   }
-  return prisma;
-}
+};
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -163,7 +190,7 @@ export async function getPrisma() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-07-23T14:28:38.868Z
+                at 2026-07-23T14:28:57.944Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
