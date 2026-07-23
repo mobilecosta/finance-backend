@@ -16,14 +16,18 @@ type Req = {
 
 export class AcbrController {
   async auth(req: Req, res: Res) {
+    console.log('Recebendo requisição de auth ACBr:', req.body);
     const { client_id, client_secret } = req.body;
     if (!client_id || !client_secret) {
       return res.status(400).json({ message: 'client_id e client_secret são obrigatórios' });
     }
     try {
+      console.log('Tentando autenticar no ACBr...');
       const data = await authenticate(client_id, client_secret);
+      console.log('Autenticação ACBr bem-sucedida');
       res.json(data);
     } catch (e) {
+      console.error('Erro na autenticação ACBr:', e);
       const msg = e instanceof Error ? e.message : 'Erro na autenticação ACBr';
       res.status(502).json({ message: msg });
     }
@@ -45,6 +49,7 @@ export class AcbrController {
       });
       res.json(data);
     } catch (e) {
+      console.error('Erro no proxy ACBr:', e);
       const msg = e instanceof Error ? e.message : 'Erro na requisição ACBr';
       res.status(502).json({ message: msg });
     }

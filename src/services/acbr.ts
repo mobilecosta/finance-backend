@@ -63,6 +63,7 @@ export async function proxyRequest(
 
   if (!res.ok) {
     const msg = typeof data === 'object' ? data?.message || data?.error || JSON.stringify(data) : data;
+    console.error('ACBr Proxy Error Details:', JSON.stringify(data, null, 2));
     throw new Error(String(msg));
   }
 
