@@ -44,14 +44,33 @@ async function runCreateCompanyTest() {
       }
     };
 
-    const result = await proxyRequest('/empresas', authData.access_token, {
-      method: 'POST',
-      body: companyData,
-      query: { ambiente: 'homologacao' }
-    });
-    
-    console.log('✅ Empresa cadastrada com sucesso!');
-    console.log('Resultado:', JSON.stringify(result, null, 2));
+    let result;
+    let reportHtml = `<h1>Relatório de Teste de Cadastro de Empresa</h1><p>CNPJ: ${cnpj}</p>`;
+
+    try {
+      result = await proxyRequest('/empresas', authData.access_token, {
+        method: 'POST',
+        body: companyData,
+        query: { ambiente: 'homologacao' }
+      });
+      console.log('✅ Empresa cadastrada com sucesso!');
+      reportHtml += `<p style="color: green">✅ Empresa cadastrada: ${JSON.stringify(result)}</p>`;
+    } catch (e) {
+      console.log('ℹ️ Erro ou empresa já cadastrada:', e.message);
+      reportHtml += `<p style="color: orange">ℹ️ Info: ${e.message}</p>`;
+    }
+
+    // Gravar no banco de dados
+    try {
+        const { getPrisma } = await import('../src/lib/prisma.js');
+        const prisma = await getPrisma();
+        await prisma.test.create({
+            data: { reportHtml }
+        });
+        console.log('✅ Resultado do teste gravado na tabela "tests".');
+    } catch (dbError) {
+        console.error('❌ Erro ao gravar no banco:', dbError.message);
+    }
 
   } catch (error) {
     console.error('❌ Erro durante o teste de criação:', (error as Error).message);

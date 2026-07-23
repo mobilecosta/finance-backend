@@ -38,13 +38,33 @@ async function runIssueNfseTest() {
     };
 
     try {
-      const result = await proxyRequest('/nfse/dps', authData.access_token, {
+          let result;
+    let reportHtml = `<h1>Relatório de Teste de Emissão de NFS-e</h1><p>CNPJ: ${cnpj}</p>`;
+    
+    try {
+      result = await proxyRequest('/nfse/dps', authData.access_token, {
         method: 'POST',
         body: dpsData,
         query: { ambiente: 'homologacao' }
       });
       console.log('✅ Requisição de emissão enviada com sucesso!');
-      console.log('Resultado:', JSON.stringify(result, null, 2));
+      reportHtml += `<p style="color: green">✅ Sucesso: ${JSON.stringify(result)}</p>`;
+    } catch (e) {
+      console.log('ℹ️ Erro na emissão (esperado se dados forem inválidos):', e.message);
+      reportHtml += `<p style="color: red">❌ Erro: ${e.message}</p>`;
+    }
+
+    // Gravar no banco de dados
+    try {
+        const { getPrisma } = await import('../src/lib/prisma.js');
+        const prisma = await getPrisma();
+        await prisma.test.create({
+            data: { reportHtml }
+        });
+        console.log('✅ Resultado do teste gravado na tabela "tests".');
+    } catch (dbError) {
+        console.error('❌ Erro ao gravar no banco:', dbError.message);
+    }
     } catch (e) {
       console.log('ℹ️ A API retornou um erro (esperado se não houver certificado configurado):');
       console.log(e instanceof Error ? e.message : JSON.stringify(e));
