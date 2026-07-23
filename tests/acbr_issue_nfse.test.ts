@@ -3,7 +3,7 @@ import { authenticate, proxyRequest } from '../src/services/acbr';
 async function runIssueNfseTest() {
   const clientId = '1l7JPNYuvVqpJUtGW1Zi';
   const clientSecret = 'bINzBI5iyXU3kYu0BdhWY2wrDEkJQUCJ';
-  const cnpj = '53708921000170';
+  const cnpj = '66549275000197';
 
   console.log('--- Iniciando Teste de Emissão de NFS-e na API ACBr ---');
   
