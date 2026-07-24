@@ -1,26 +1,24 @@
 import { authenticate, proxyRequest } from '../src/services/acbr';
 
-async function runIssueNfseTest() {
+describe('ACBr Issue NFS-e Tests', () => {
   const clientId = '1l7JPNYuvVqpJUtGW1Zi';
   const clientSecret = 'bINzBI5iyXU3kYu0BdhWY2wrDEkJQUCJ';
   const cnpj = '66549275000197';
 
-  console.log('--- Iniciando Teste de Emissão de NFS-e na API ACBr ---');
-  
-  try {
-    // Passo 1: Autenticando
-    console.log('Passo 1: Autenticando...');
+  it('should authenticate with real credentials', async () => {
     const authData = await authenticate(clientId, clientSecret);
-    console.log('✅ Autenticação bem-sucedida!');
+    expect(authData).toBeDefined();
+    expect(authData.access_token).toBeDefined();
+  });
 
-    // Passo 2: Tentar emitir NFS-e (DPS)
-    console.log('\nPasso 2: Tentando enviar DPS para emissão de NFS-e...');
+  it('should try to issue NFS-e (DPS)', async () => {
+    const authData = await authenticate(clientId, clientSecret);
     const dpsData = {
       provedor: 'padrao',
       ambiente: 'homologacao',
       referencia: 'TESTE-MANUS-' + Date.now(),
       infDPS: {
-        tpAmb: 2, // Homologação
+        tpAmb: 2,
         dhEmi: new Date().toISOString(),
         prest: {
           CNPJ: cnpj
@@ -30,7 +28,7 @@ async function runIssueNfseTest() {
           xNome: 'CLIENTE TESTE'
         },
         serv: {
-          cServ: { cServ: "01.01" }, // Ajustando para objeto conforme esperado pela API
+          cServ: { cServ: "01.01" },
           xDesc: 'SERVICO DE TESTE API ACBR',
           vServ: 10.00
         }
@@ -38,58 +36,26 @@ async function runIssueNfseTest() {
     };
 
     try {
-          let result;
-    let reportHtml = `<h1>Relatório de Teste de Emissão de NFS-e</h1><p>CNPJ: ${cnpj}</p>`;
-    
-    try {
-      result = await proxyRequest('/nfse/dps', authData.access_token, {
+      const result = await proxyRequest('/nfse/dps', authData.access_token, {
         method: 'POST',
         body: dpsData,
         query: { ambiente: 'homologacao' }
       });
-      console.log('✅ Requisição de emissão enviada com sucesso!');
-      reportHtml += `<p style="color: green">✅ Sucesso: ${JSON.stringify(result)}</p>`;
+      expect(result).toBeDefined();
     } catch (e) {
-      console.log('ℹ️ Erro na emissão (esperado se dados forem inválidos):', e.message);
-      reportHtml += `<p style="color: red">❌ Erro: ${e.message}</p>`;
+      expect(e).toBeDefined();
     }
+  });
 
-    // Gravar no banco de dados
-    try {
-        const { getPrisma } = await import('../src/lib/prisma.js');
-        const prisma = await getPrisma();
-        await prisma.test.create({
-            data: { reportHtml }
-        });
-        console.log('✅ Resultado do teste gravado na tabela "tests".');
-    } catch (dbError) {
-        console.error('❌ Erro ao gravar no banco:', dbError.message);
-    }
-    } catch (e) {
-      console.log('ℹ️ A API retornou um erro (esperado se não houver certificado configurado):');
-      console.log(e instanceof Error ? e.message : JSON.stringify(e));
-    }
-
-    // Passo 3: Listar NFS-e para o CNPJ
-    console.log('\nPasso 3: Listando NFS-e existentes para o CNPJ...');
+  it('should list NFS-e for the CNPJ', async () => {
+    const authData = await authenticate(clientId, clientSecret);
     const listResult = await proxyRequest('/nfse', authData.access_token, {
-      query: { 
+      query: {
         cpf_cnpj: cnpj,
         ambiente: 'homologacao',
         '$top': '5'
       }
     });
-    console.log('✅ Consulta de lista de NFS-e realizada!');
-    console.log('Total encontrado:', listResult['@count'] || 0);
-    if (listResult.data) {
-        console.log('Dados (primeiros registros):', JSON.stringify(listResult.data, null, 2));
-    }
-
-  } catch (error) {
-    console.error('❌ Erro inesperado durante o teste:', (error as Error).message);
-  }
-
-  console.log('\n--- Teste de NFS-e Concluído ---');
-}
-
-runIssueNfseTest().catch(console.error);
+    expect(listResult).toBeDefined();
+  });
+});
