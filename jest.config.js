@@ -30,5 +30,6 @@ export default {
         expand: true,
       },
     ],
+    '<rootDir>/src/lib/jestTestReporter.cjs',
   ],
 };

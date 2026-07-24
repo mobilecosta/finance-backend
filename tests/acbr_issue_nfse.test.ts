@@ -20,6 +20,7 @@ describe('ACBr Issue NFS-e Tests', () => {
       infDPS: {
         tpAmb: 2,
         dhEmi: new Date().toISOString(),
+        dCompet: new Date().toISOString().split('T')[0],
         prest: {
           CNPJ: cnpj
         },
@@ -28,9 +29,23 @@ describe('ACBr Issue NFS-e Tests', () => {
           xNome: 'CLIENTE TESTE'
         },
         serv: {
-          cServ: { cServ: "01.01" },
-          xDesc: 'SERVICO DE TESTE API ACBR',
-          vServ: 10.00
+          cServ: {
+            cTribNac: '010701',
+            xDescServ: 'SERVICO DE TESTE API ACBR'
+          },
+          locPrest: {
+            cLocPrestacao: '3550308'
+          }
+        },
+        valores: {
+          vServPrest: {
+            vServ: 10.00
+          },
+          trib: {
+            tribMun: {
+              tribISSQN: 1
+            }
+          }
         }
       }
     };
