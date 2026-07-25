@@ -14,7 +14,6 @@ let prisma: any;
 describe('Coverage report routes', () => {
   beforeAll(async () => {
     prisma = await getPrisma();
-    // Remove database records so tests use local file
     await prisma.test.deleteMany();
 
     previousReport = fs.existsSync(reportPath)
@@ -34,29 +33,38 @@ describe('Coverage report routes', () => {
     if (prisma) await prisma.$disconnect();
   });
 
-  it.each(['/coverage', '/tests'])('GET %s deve retornar o relatório HTML', async (route) => {
-    const response = await request(app).get(route);
+  it('GET /tests deve retornar o relatório HTML', async () => {
+    const response = await request(app).get('/tests');
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toMatch(/text\/html/);
     expect(response.text).toContain('Coverage test report');
   });
 
-  it('GET / deve anunciar a rota de cobertura', async () => {
-    const response = await request(app).get('/');
+  it('GET /coverage redireciona para /tests', async () => {
+    const response = await request(app).get('/coverage');
 
-    expect(response.status).toBe(200);
-    expect(response.body.coverage).toBe('/coverage');
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/tests');
   });
 
-  it('GET /coverage deve informar claramente quando o relatório não existe', async () => {
+  it('GET /coverage sem relatório redireciona para /tests', async () => {
     fs.rmSync(reportPath, { force: true });
 
     const response = await request(app).get('/coverage');
 
-    expect(response.status).toBe(404);
-    expect(response.text).toContain('Nenhum relatório de cobertura encontrado');
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/tests');
 
     fs.writeFileSync(reportPath, fixtureReport);
+  });
+
+  it('GET / deve anunciar as rotas da API', async () => {
+    const response = await request(app).get('/');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('message');
+    expect(response.body).toHaveProperty('api_tests');
+    expect(response.body).toHaveProperty('health');
   });
 });

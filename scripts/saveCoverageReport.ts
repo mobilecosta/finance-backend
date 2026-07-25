@@ -1,30 +1,45 @@
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_ANON_KEY || '';
-const reportHtmlPath = path.join(process.cwd(), 'coverage', 'lcov-report', 'index.html');
+const lcovHtmlPath = path.join(process.cwd(), 'coverage', 'lcov-report', 'index.html');
+const jestHtmlPath = path.join(process.cwd(), 'coverage', 'report.html');
+
+function findReportHtml(): string | null {
+  // 1. Istanbul HTML (lcov-report) — HTML mais completo com código fonte
+  if (fs.existsSync(lcovHtmlPath)) {
+    console.log('Usando relatório LCOV HTML:', lcovHtmlPath);
+    return fs.readFileSync(lcovHtmlPath, 'utf8');
+  }
+  // 2. jest-html-reporters — relatório dos testes executados
+  if (fs.existsSync(jestHtmlPath)) {
+    console.log('Usando relatório jest-html-reporters:', jestHtmlPath);
+    return fs.readFileSync(jestHtmlPath, 'utf8');
+  }
+  return null;
+}
 
 async function saveCoverageReport() {
   try {
-    if (!fs.existsSync(reportHtmlPath)) {
-      console.log('Relatório LCOV não encontrado em', reportHtmlPath);
-      console.log('Tentando gerar com Jest --coverage...');
-      const jestBin = path.resolve(process.cwd(), 'node_modules', '.bin', 'jest');
-      execSync(`"${jestBin}" --coverage --no-cache`, {
+    if (!fs.existsSync(lcovHtmlPath)) {
+      console.log('Relatório LCOV HTML não encontrado em', lcovHtmlPath);
+      console.log('Tentando gerar com Jest --coverage (todos os testes)...');
+      execSync('NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules npx jest --coverage --no-cache', {
         stdio: 'inherit',
-        timeout: 180000,
-        env: { ...process.env, NODE_ENV: 'test', NODE_OPTIONS: '--experimental-vm-modules' },
+        timeout: 300000,
+        cwd: process.cwd(),
       });
     }
 
-    if (!fs.existsSync(reportHtmlPath)) {
-      console.error('Erro: Relatório não foi gerado em', reportHtmlPath);
+    const reportHtml = findReportHtml();
+
+    if (!reportHtml) {
+      console.error('Erro: Nenhum relatório HTML encontrado em', lcovHtmlPath, 'ou', jestHtmlPath);
       return;
     }
-
-    const reportHtml = fs.readFileSync(reportHtmlPath, 'utf8');
 
     if (supabaseKey) {
       try {

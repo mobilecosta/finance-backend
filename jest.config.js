@@ -18,7 +18,7 @@ export default {
   },
   collectCoverage: true,
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'json-summary'],
+  coverageReporters: ['text', 'lcov', 'json-summary', 'html'],
   testMatch: ['**/tests/**/*.test.ts'],
   reporters: [
     'default',

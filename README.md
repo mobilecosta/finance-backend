@@ -211,19 +211,6 @@ npx prisma db push
 
 ---
 
-## Scripts
-
-| Comando | Descrição |
-|---------|-----------|
-| `pnpm dev` | Inicia servidor em modo dev |
-| `pnpm build` | Compila TypeScript |
-| `pnpm start` | Inicia servidor em produção |
-| `pnpm test` | Executa testes de integração |
-| `pnpm test:coverage` | Executa testes com cobertura e salva relatório |
-| `pnpm deploy` | Faz deploy na Vercel |
-
----
-
 ## Deploy na Vercel
 
 O projeto está configurado para deploy na Vercel via `vercel.json`. Configure as variáveis de ambiente no painel da Vercel e faça deploy com:
@@ -263,12 +250,19 @@ tests/
 ### Resultado Atual
 
 ```
+Test Suites: 8 passed, 8 total
+Tests:       22 passed, 22 total
+```
+
+Todas as **8 suítes passam** com `DATABASE_URL` configurada (local ou produção).
+
+Sem `DATABASE_URL`:
+```
 Test Suites: 7 passed, 1 failed, 8 total
 Tests:       18 passed, 4 failed, 22 total
 ```
-
 - **7 suítes passam** (ACBr + Finance)
-- **1 suíte falha** (`coverage.test.ts`) — requer `DATABASE_URL` em ambiente local. Funciona em produção com as envs configuradas.
+- **1 suíte falha** (`coverage.test.ts`) — requer `DATABASE_URL` (tabela `tests` no banco).
 
 ### Execução
 
@@ -301,6 +295,47 @@ export default {
 
 > **Nota:** O preset `ts-jest/presets/default-esm` resolve para o arquivo `jest-preset.js` dentro do diretório `node_modules/ts-jest/presets/default-esm/`. Jest automaticamente anexa `/jest-preset` ao nome do preset quando não é um caminho absoluto.
 
+### API de Testes
+
+O módulo de testes expõe estas rotas em `/api/tests`:
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `POST` | `/api/tests/run-all` | Executa todos os testes via Jest no serverless e salva relatório HTML |
+| `GET` | `/api/tests` | Lista paginada de relatórios salvos |
+| `GET` | `/api/tests/:id` | Detalhes de um relatório específico (HTML inline) |
+| `GET` | `/api/tests/:id/html` | Visualização direta do HTML do relatório no navegador |
+
+**Parâmetros de paginação** (`GET /api/tests`):
+| Query | Tipo | Default | Descrição |
+|-------|------|---------|-----------|
+| `page` | number | 1 | Número da página |
+| `pageSize` | number | 20 | Itens por página |
+
+**Rotas legadas** (compatibilidade):
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `GET` | `/tests` | Último relatório de testes salvo (HTML) |
+| `GET` | `/tests/pdf` | Último relatório de testes em PDF |
+| `GET` | `/coverage` | Redireciona para `/tests` |
+| `GET` | `/coverage-static` | Serve arquivos estáticos do relatório LCOV |
+
+Response `GET /api/tests`:
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "date": "25/07/2026",
+      "time": "20:30:00",
+      "createdAt": "2026-07-25T23:30:00.000Z",
+      "updatedAt": "2026-07-25T23:30:00.000Z"
+    }
+  ],
+  "hasNext": false
+}
+```
+
 ### Execução em Serverless (Vercel)
 
 O endpoint `POST /api/tests/run-all` executa Jest dentro do ambiente serverless Vercel com as seguintes particularidades:
@@ -324,12 +359,37 @@ execSync(
 
 ### Pipeline de Build
 
-No `vercel-build`, o script `scripts/run_acbr_tests.ts` executa `npx jest --testPathPatterns="acbr"` e salva o relatório:
+O `vercel-build` executa todos os testes com cobertura em duas etapas:
 
-1. Jest executa as 6 suítes ACBr.
-2. Relatório HTML é gerado em `coverage/report.html`.
-3. `src/lib/testReporter.ts` salva o HTML na tabela `tests` do banco e envia email (se `SMTP_USER`/`SMTP_PASS` configurados).
-4. `scripts/saveCoverageReport.ts` também salva o relatório de cobertura.
+```
+prisma generate && tsc && npx jest --coverage --no-cache && tsx scripts/saveCoverageReport.ts
+```
+
+1. **Jest** executa todas as 8 suítes com `--coverage`.
+2. `coverage/report.html` (jest-html-reporters) e `coverage/lcov-report/index.html` (Istanbul HTML) são gerados.
+3. `scripts/saveCoverageReport.ts` salva o melhor HTML disponível (Istanbul → jest-html-reporters) na tabela `tests` e no Storage Supabase (`coverage-reports/latest.html`).
+
+**Relatórios gerados em `coverage/`:**
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `report.html` | Detalhes dos testes (jest-html-reporters) |
+| `lcov-report/index.html` | Cobertura de código (Istanbul) |
+| `lcov.info` | Dados LCOV |
+| `coverage-summary.json` | Resumo em JSON |
+
+---
+
+## Scripts
+
+| Comando | Descrição |
+|---------|-----------|
+| `pnpm dev` | Inicia servidor em modo dev |
+| `pnpm build` | Compila TypeScript |
+| `pnpm start` | Inicia servidor em produção |
+| `pnpm test` | Executa todos os testes |
+| `pnpm test:coverage` | Executa todos os testes com cobertura e salva relatório |
+| `pnpm deploy` | Faz deploy na Vercel |
 
 ---
 
