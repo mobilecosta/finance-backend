@@ -234,6 +234,103 @@ pnpm deploy
 
 ---
 
+## Testes
+
+### Stack
+
+| Ferramenta | Versão | Função |
+|------------|--------|--------|
+| **Jest** | ^30.4.2 | Runner de testes |
+| **ts-jest** | ^29.4.11 | Transformer TypeScript → JS (ESM) |
+| **Supertest** | ^7.2.2 | Testes HTTP |
+| **jest-html-reporters** | ^3.1.7 | Relatório HTML |
+| **jest-environment-node** | ^30.x | Ambiente Node para Jest |
+
+### Estrutura
+
+```
+tests/
+├── acbr_manual.test.ts         # Teste manual da API ACBr (proxy)
+├── acbr_real.test.ts           # Testes reais contra endpoints ACBr
+├── acbr_integration.test.ts    # Testes de integração com ACBr
+├── acbr_create_company.test.ts # Criação de empresa no ACBr
+├── acbr_configure_nfse.test.ts # Configuração de empresa + NFS-e
+├── acbr_issue_nfse.test.ts     # Emissão de DPS + consulta NFS-e
+├── finance.test.ts             # Health check e endpoints básicos
+└── coverage.test.ts            # Rotas de relatório de cobertura
+```
+
+### Resultado Atual
+
+```
+Test Suites: 7 passed, 1 failed, 8 total
+Tests:       18 passed, 4 failed, 22 total
+```
+
+- **7 suítes passam** (ACBr + Finance)
+- **1 suíte falha** (`coverage.test.ts`) — requer `DATABASE_URL` em ambiente local. Funciona em produção com as envs configuradas.
+
+### Execução
+
+```bash
+# Local (com NODE_OPTIONS para ESM)
+pnpm test
+
+# Com relatório HTML e cobertura
+pnpm test:coverage
+
+# Apenas suítes ACBr
+NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules npx jest --testPathPatterns="acbr"
+```
+
+### Configuração do Jest
+
+Arquivo: `jest.config.js` (ESM, type: module)
+
+```js
+export default {
+  preset: 'ts-jest/presets/default-esm',
+  testEnvironment: 'node',
+  moduleNameMapper: { '^(\\.{1,2}/.*)\\.js$': '$1' },
+  transform: { '^.+\\.tsx?$': ['ts-jest', { useESM: true }] },
+  collectCoverage: true,
+  coverageDirectory: 'coverage',
+  reporters: ['default', ['jest-html-reporters', { publicPath: './coverage', filename: 'report.html' }]],
+};
+```
+
+> **Nota:** O preset `ts-jest/presets/default-esm` resolve para o arquivo `jest-preset.js` dentro do diretório `node_modules/ts-jest/presets/default-esm/`. Jest automaticamente anexa `/jest-preset` ao nome do preset quando não é um caminho absoluto.
+
+### Execução em Serverless (Vercel)
+
+O endpoint `POST /api/tests/run-all` executa Jest dentro do ambiente serverless Vercel com as seguintes particularidades:
+
+1. **Config temporária:** Gera `jest.config.cjs` em `/tmp/` com caminhos absolutos para evitar dependência de resolução de módulo relativa.
+2. **Filesystem read-only:** O diretório `/var/task` (cwd) é somente leitura. Output de cobertura vai para `/tmp/coverage`.
+3. **HOME=/tmp:** Necessário para npm cache em ambiente serverless.
+4. **NODE_PATH setado:** `NODE_PATH=/var/task/node_modules` para que o `require()` de módulos como `jest-environment-node` funcione mesmo quando a config está em `/tmp/`.
+5. **Preset absoluto:** O preset `ts-jest/presets/default-esm/jest-preset.js` é passado como caminho absoluto para evitar erro `"not found relative to rootDir"`.
+
+```typescript
+// Lógica central (TestController.runAllTests)
+const tmpConfig = '/tmp/jest.config.cjs';
+const presetFile = '/var/task/node_modules/ts-jest/presets/default-esm/jest-preset.js';
+
+execSync(
+  `node --experimental-vm-modules "${jestBin}" --config "${tmpConfig}" --rootDir "${cwd}" --no-cache`,
+  { cwd, env: { ...process.env, NODE_PATH: path.resolve(cwd, 'node_modules'), HOME: '/tmp', NODE_ENV: 'test' } }
+);
+```
+
+### Pipeline de Build
+
+No `vercel-build`, o script `scripts/run_acbr_tests.ts` executa `npx jest --testPathPatterns="acbr"` e salva o relatório:
+
+1. Jest executa as 6 suítes ACBr.
+2. Relatório HTML é gerado em `coverage/report.html`.
+3. `src/lib/testReporter.ts` salva o HTML na tabela `tests` do banco e envia email (se `SMTP_USER`/`SMTP_PASS` configurados).
+4. `scripts/saveCoverageReport.ts` também salva o relatório de cobertura.
+
 ---
 
 ## Integração NFS-e (ACBr)
@@ -288,17 +385,6 @@ Integração com a API **ACBr** ([docs.opencode.ai/acbr](https://docs.opencode.a
 - **IBGE:** `3543303`
 - **RPS:** `lote: 1`, `serie: "1"`, `numero: 1`
 - **Ambiente:** homologação (`2`)
-
-### Testes (6 suites, 16 testes)
-
-| Suite | Descrição |
-|-------|-----------|
-| `acbr_manual.test.ts` | Teste manual da API ACBr (proxy) |
-| `acbr_real.test.ts` | Testes reais contra endpoints ACBr |
-| `acbr_integration.test.ts` | Testes de integração com ACBr |
-| `acbr_create_company.test.ts` | Criação de empresa no ACBr |
-| `acbr_configure_nfse.test.ts` | Configuração de empresa + NFS-e no ACBr |
-| `acbr_issue_nfse.test.ts` | Emissão de DPS + consulta NFS-e |
 
 ### Bloqueios Conhecidos
 
