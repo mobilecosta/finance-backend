@@ -4,6 +4,9 @@ import { TestController } from '../controllers/TestController.js';
 const router = Router();
 const testController = new TestController();
 
+// Executar todos os testes
+router.post('/run-all', testController.runAllTests);
+
 // Listagem paginada de testes
 router.get('/', testController.getTests);
 
