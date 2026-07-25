@@ -38,9 +38,10 @@ export class TestController {
 
       const tmpConfig = path.resolve(tmpDir, 'jest.config.cjs');
       const reporterAbs = path.resolve(cwd, 'src/lib/jestTestReporter.cjs');
+      const presetAbs = path.resolve(cwd, 'node_modules/ts-jest/presets/default-esm');
       const configLines = [
         'module.exports = {',
-        "  preset: 'ts-jest/presets/default-esm',",
+        `  preset: '${presetAbs}',`,
         "  testEnvironment: 'node',",
         "  moduleNameMapper: { '^(\\\\.{1,2}/.*)\\\\.js$': '$1' },",
         "  transform: { '^.+\\\\.tsx?$': ['ts-jest', { useESM: true, diagnostics: { ignoreCodes: [151002] } }] },",
