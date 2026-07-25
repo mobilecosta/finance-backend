@@ -5,8 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
-const { createClient } = await import('@supabase/supabase-js') as any;
+import { supabase } from '../src/lib/supabase.js';
 
 import financeRoutes from '../src/routes/finance.js';
 import authRoutes from '../src/routes/auth.js';
@@ -164,10 +163,7 @@ app.get('/coverage', async (req: any, res: any) => {
   } catch (e) {}
 
   try {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
-    if (supabaseUrl && supabaseKey) {
-      const supabase = createClient(supabaseUrl, supabaseKey);
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
       const { data: files, error } = await supabase.storage
         .from('coverage-reports')
         .list('', { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
