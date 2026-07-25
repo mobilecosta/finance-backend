@@ -29,26 +29,34 @@ export class TestController {
     try {
       if (fs.existsSync(tmpCoverage)) fs.rmSync(tmpCoverage, { recursive: true });
 
-      // Temp config to redirect HTML report to /tmp (writable on Vercel)
-      const tmpConfig = path.resolve(tmpDir, 'jest.config.mjs');
+      // Copy config to /tmp with output redirected to writable dir
       const cwd = process.cwd();
-      fs.writeFileSync(tmpConfig, `
-import base from '${cwd}/jest.config.js';
-base.reporters = base.reporters.map(r => {
-  if (Array.isArray(r) && r[0] === 'jest-html-reporters') {
-    r[1].publicPath = '${tmpCoverage}';
-  }
-  return r;
-});
-base.coverageDirectory = '${tmpCoverage}';
-export default base;
-`.trimStart(), 'utf-8');
+      const origConfig = path.resolve(cwd, 'jest.config.js');
+      if (!fs.existsSync(origConfig)) {
+        return res.status(500).json({ success: false, error: 'jest.config.js não encontrado' });
+      }
+      const jestBin = path.resolve(cwd, 'node_modules', 'jest', 'bin', 'jest.js');
+      if (!fs.existsSync(jestBin)) {
+        return res.status(500).json({ success: false, error: 'Jest não encontrado em node_modules' });
+      }
 
-      execSync(`npx jest --config "${tmpConfig}"`, {
+      const tmpConfig = path.resolve(tmpDir, 'jest.config.mjs');
+      let configContent = fs.readFileSync(origConfig, 'utf-8');
+      configContent = configContent.replace(
+        "publicPath: './coverage',",
+        "publicPath: '/tmp/coverage',"
+      );
+      configContent = configContent.replace(
+        "coverageDirectory: 'coverage',",
+        "coverageDirectory: '/tmp/coverage',"
+      );
+      fs.writeFileSync(tmpConfig, configContent, 'utf-8');
+
+      execSync(`node --experimental-vm-modules "${jestBin}" --config "${tmpConfig}" --no-cache`, {
         cwd,
         stdio: 'pipe',
         timeout: 180000,
-        env: { ...process.env, HOME: '/tmp', NODE_ENV: 'test', NODE_OPTIONS: '--experimental-vm-modules' },
+        env: { ...process.env, HOME: '/tmp', NODE_ENV: 'test' },
       });
 
       if (fs.existsSync(tmpConfig)) fs.unlinkSync(tmpConfig);
