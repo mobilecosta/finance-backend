@@ -29,33 +29,29 @@ export class TestController {
     try {
       if (fs.existsSync(tmpCoverage)) fs.rmSync(tmpCoverage, { recursive: true });
 
-      // Copy config to /tmp with output redirected to writable dir
+      // Standalone CJS config in /tmp that overrides output paths
       const cwd = process.cwd();
-      const origConfig = path.resolve(cwd, 'jest.config.js');
-      if (!fs.existsSync(origConfig)) {
-        return res.status(500).json({ success: false, error: 'jest.config.js não encontrado' });
-      }
       const jestBin = path.resolve(cwd, 'node_modules', 'jest', 'bin', 'jest.js');
       if (!fs.existsSync(jestBin)) {
         return res.status(500).json({ success: false, error: 'Jest não encontrado em node_modules' });
       }
 
-      const tmpConfig = path.resolve(tmpDir, 'jest.config.mjs');
-      let configContent = fs.readFileSync(origConfig, 'utf-8');
-      configContent = configContent.replace(
-        "publicPath: './coverage',",
-        "publicPath: '/tmp/coverage',"
-      );
-      configContent = configContent.replace(
-        "coverageDirectory: 'coverage',",
-        "coverageDirectory: '/tmp/coverage',"
-      );
-      // Fix reporter rootDir path since config is in /tmp
-      configContent = configContent.replace(
-        '<rootDir>/src/lib/jestTestReporter.cjs',
-        `'${cwd}/src/lib/jestTestReporter.cjs'`
-      );
-      fs.writeFileSync(tmpConfig, configContent, 'utf-8');
+      const tmpConfig = path.resolve(tmpDir, 'jest.config.cjs');
+      const reporterAbs = path.resolve(cwd, 'src/lib/jestTestReporter.cjs');
+      const configLines = [
+        'module.exports = {',
+        "  preset: 'ts-jest/presets/default-esm',",
+        "  testEnvironment: 'node',",
+        "  moduleNameMapper: { '^(\\\\.{1,2}/.*)\\\\.js$': '$1' },",
+        "  transform: { '^.+\\\\.tsx?$': ['ts-jest', { useESM: true, diagnostics: { ignoreCodes: [151002] } }] },",
+        '  collectCoverage: true,',
+        `  coverageDirectory: '${tmpCoverage}',`,
+        "  coverageReporters: ['text', 'lcov', 'json-summary'],",
+        "  testMatch: ['**/tests/**/*.test.ts'],",
+        `  reporters: ['default', ['jest-html-reporters', { publicPath: '${tmpCoverage}', filename: 'report.html', expand: true }], '${reporterAbs}'],`,
+        '};',
+      ];
+      fs.writeFileSync(tmpConfig, configLines.join('\n'), 'utf-8');
 
       execSync(`node --experimental-vm-modules "${jestBin}" --config "${tmpConfig}" --rootDir "${cwd}" --no-cache`, {
         cwd,
