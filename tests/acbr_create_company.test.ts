@@ -35,7 +35,7 @@ describe('ACBr Create Company Tests', () => {
         logradouro: 'RUA TESTE',
         numero: '123',
         bairro: 'CENTRO',
-        codigo_municipio: '3550308',
+        codigo_municipio: '3543303',
         cidade: 'SAO PAULO',
         uf: 'SP',
         cep: '01001000'
