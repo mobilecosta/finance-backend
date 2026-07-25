@@ -10,6 +10,7 @@ import { supabase } from '../src/lib/supabase.js';
 import financeRoutes from '../src/routes/finance.js';
 import authRoutes from '../src/routes/auth.js';
 import acbrRoutes from '../src/routes/acbr.js';
+import acbrTestRoutes from '../src/routes/acbr-tests.js';
 import testRoutes from '../src/routes/tests.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -79,6 +80,7 @@ app.get('/health', (req: any, res: any) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/acbr', acbrRoutes);
+app.use('/api/acbr-tests', acbrTestRoutes);
 app.use('/api/tests', testRoutes);
 
 app.get('/tests', async (req: any, res: any) => {

@@ -9,6 +9,7 @@ import { execSync } from 'child_process';
 import financeRoutes from './routes/finance.js';
 import authRoutes from './routes/auth.js';
 import acbrRoutes from './routes/acbr.js';
+import acbrTestRoutes from './routes/acbr-tests.js';
 import testRoutes from './routes/tests.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -78,6 +79,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/acbr', acbrRoutes);
+app.use('/api/acbr-tests', acbrTestRoutes);
 app.use('/api/tests', testRoutes);
 
 // Rotas legadas para compatibilidade
