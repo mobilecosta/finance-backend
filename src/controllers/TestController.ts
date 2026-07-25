@@ -59,7 +59,7 @@ export class TestController {
         cwd,
         stdio: 'pipe',
         timeout: 180000,
-        env: { ...process.env, HOME: '/tmp', NODE_ENV: 'test' },
+        env: { ...process.env, HOME: '/tmp', NODE_ENV: 'test', NODE_PATH: path.resolve(cwd, 'node_modules') },
       });
 
       if (fs.existsSync(tmpConfig)) fs.unlinkSync(tmpConfig);
