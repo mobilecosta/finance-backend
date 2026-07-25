@@ -48,7 +48,7 @@ export default base;
         cwd,
         stdio: 'pipe',
         timeout: 180000,
-        env: { ...process.env, NODE_ENV: 'test', NODE_OPTIONS: '--experimental-vm-modules' },
+        env: { ...process.env, HOME: '/tmp', NODE_ENV: 'test', NODE_OPTIONS: '--experimental-vm-modules' },
       });
 
       if (fs.existsSync(tmpConfig)) fs.unlinkSync(tmpConfig);
