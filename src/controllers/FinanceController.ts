@@ -1,4 +1,5 @@
 import { getPrisma } from '../lib/prisma.js';
+import { parsePagination, paginatedResponse } from '../lib/pagination.js';
 
 type Res = {
   status(code: number): Res;
@@ -77,13 +78,19 @@ export class FinanceController {
   async getAccounts(req: Req, res: Res) {
     const user = req.user;
     const userId = user.id;
+    const { page, pageSize, skip } = parsePagination(req.query);
     try {
       const prisma = await getPrisma();
-      const accounts = await prisma.account.findMany({
-        where: { userId: String(userId) },
-        orderBy: { createdAt: 'desc' },
-      });
-      res.json(accounts);
+      const [accounts, total] = await Promise.all([
+        prisma.account.findMany({
+          where: { userId: String(userId) },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: pageSize,
+        }),
+        prisma.account.count({ where: { userId: String(userId) } }),
+      ]);
+      res.json(paginatedResponse(accounts, total, pageSize, skip));
     } catch (error) {
       res.status(500).json({ error: 'Internal server error' });
     }
@@ -154,13 +161,19 @@ export class FinanceController {
   async getCategories(req: Req, res: Res) {
     const user = req.user;
     const userId = user.id;
+    const { page, pageSize, skip } = parsePagination(req.query);
     try {
       const prisma = await getPrisma();
-      const categories = await prisma.category.findMany({
-        where: { userId: String(userId) },
-        orderBy: { name: 'asc' },
-      });
-      res.json(categories);
+      const [categories, total] = await Promise.all([
+        prisma.category.findMany({
+          where: { userId: String(userId) },
+          orderBy: { name: 'asc' },
+          skip,
+          take: pageSize,
+        }),
+        prisma.category.count({ where: { userId: String(userId) } }),
+      ]);
+      res.json(paginatedResponse(categories, total, pageSize, skip));
     } catch (error) {
       res.status(500).json({ error: 'Internal server error' });
     }
@@ -230,15 +243,21 @@ export class FinanceController {
   async getTransactions(req: Req, res: Res) {
     const user = req.user;
     const userId = user.id;
+    const { page, pageSize, skip } = parsePagination(req.query);
 
     try {
       const prisma = await getPrisma();
-      const transactions = await prisma.transaction.findMany({
-        where: { userId: String(userId) },
-        include: { category: true, account: true },
-        orderBy: { date: 'desc' }
-      });
-      res.json(transactions);
+      const [transactions, total] = await Promise.all([
+        prisma.transaction.findMany({
+          where: { userId: String(userId) },
+          include: { category: true, account: true },
+          orderBy: { date: 'desc' },
+          skip,
+          take: pageSize,
+        }),
+        prisma.transaction.count({ where: { userId: String(userId) } }),
+      ]);
+      res.json(paginatedResponse(transactions, total, pageSize, skip));
     } catch (error) {
       res.status(500).json({ error: 'Internal server error' });
     }
