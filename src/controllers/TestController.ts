@@ -50,9 +50,14 @@ export class TestController {
         "coverageDirectory: 'coverage',",
         "coverageDirectory: '/tmp/coverage',"
       );
+      // Fix reporter rootDir path since config is in /tmp
+      configContent = configContent.replace(
+        '<rootDir>/src/lib/jestTestReporter.cjs',
+        `'${cwd}/src/lib/jestTestReporter.cjs'`
+      );
       fs.writeFileSync(tmpConfig, configContent, 'utf-8');
 
-      execSync(`node --experimental-vm-modules "${jestBin}" --config "${tmpConfig}" --no-cache`, {
+      execSync(`node --experimental-vm-modules "${jestBin}" --config "${tmpConfig}" --rootDir "${cwd}" --no-cache`, {
         cwd,
         stdio: 'pipe',
         timeout: 180000,
