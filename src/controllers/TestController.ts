@@ -72,20 +72,21 @@ export class TestController {
         return res.status(500).json({ success: false, error: 'Relatório HTML não foi gerado' });
       }
 
-      // Upload to Supabase Storage bucket "coverage-reports"
+      // Upload to Supabase Storage bucket "documentos"
       const supabaseUrl = process.env.SUPABASE_URL || '';
       const supabaseKey = process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_ANON_KEY || '';
       let storageUrl = '';
       if (supabaseUrl && supabaseKey) {
         const supabase = createClient(supabaseUrl, supabaseKey);
-        const fileName = `report-${Date.now()}.html`;
-        const { error: uploadError } = await supabase.storage
-          .from('coverage-reports')
-          .upload(fileName, html, { contentType: 'text/html', upsert: true });
-        if (uploadError) {
-          console.warn('Storage upload failed:', uploadError.message);
+        const filePath = `tests/report-${Date.now()}.html`;
+        const arquivoBuffer = Buffer.from(html, 'utf-8');
+        const { data, error } = await supabase.storage
+          .from('documentos')
+          .upload(filePath, arquivoBuffer, { contentType: 'text/html', upsert: true });
+        if (error) {
+          console.warn('Storage upload failed:', error.message);
         } else {
-          const { data: { publicUrl } } = supabase.storage.from('coverage-reports').getPublicUrl(fileName);
+          const { data: { publicUrl } } = supabase.storage.from('documentos').getPublicUrl(filePath);
           storageUrl = publicUrl;
         }
       }
