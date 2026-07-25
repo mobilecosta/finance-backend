@@ -234,4 +234,82 @@ pnpm deploy
 
 ---
 
+---
+
+## Integração NFS-e (ACBr)
+
+Integração com a API **ACBr** ([docs.opencode.ai/acbr](https://docs.opencode.ai/acbr)) para emissão de Nota Fiscal de Serviço eletrônica (NFS-e) via DPS.
+
+### Provedor
+
+| Provedor | Status | Observação |
+|----------|--------|------------|
+| `ISSSaoPaulo` (padrao) | ❌ Bloqueado | Provedor local SP — não possui URL de homologação no ACBr |
+| `nacional` (ADN) | ⚠️ Homologação | Sistema Nacional (gov.br/nfse) — DPS processada, retorno `E0120` |
+
+### Payload DPS (`InfDPS`)
+
+```json
+{
+  "serv": {
+    "cServ": {
+      "cTribNac": "010701",
+      "cNBS": "101010000",
+      "xDescServ": "Serviço de desenvolvimento de sistemas",
+      "IBSCBS": {
+        "CST": "100",
+        "cClassTrib": "100000",
+        "indTotTrib": 0
+      }
+    }
+  },
+  "valores": {
+    "vServ": 1.00,
+    "vDescIncond": 0.00,
+    "vDescCond": 0.00,
+    "vDeducao": 0.00,
+    "vIss": 0.05,
+    "vAliq": 0.05,
+    "trib": {
+      "totTrib": 0.00,
+      "indTotTrib": 0
+    }
+  },
+  "prest": { "CNPJ": "66549275000197", "xNome": "Finance Pro Teste Ltda" },
+  "tom": { "CNPJ": "00000000000191", "xNome": "Tomador Teste Ltda" },
+  "comp": { "cMun": 3543303 }
+}
+```
+
+### Empresa e Configuração NFS-e
+
+- **CNPJ:** `66549275000197`
+- **Inscrição Municipal:** `123456`
+- **IBGE:** `3543303`
+- **RPS:** `lote: 1`, `serie: "1"`, `numero: 1`
+- **Ambiente:** homologação (`2`)
+
+### Testes (6 suites, 16 testes)
+
+| Suite | Descrição |
+|-------|-----------|
+| `acbr_manual.test.ts` | Teste manual da API ACBr (proxy) |
+| `acbr_real.test.ts` | Testes reais contra endpoints ACBr |
+| `acbr_integration.test.ts` | Testes de integração com ACBr |
+| `acbr_create_company.test.ts` | Criação de empresa no ACBr |
+| `acbr_configure_nfse.test.ts` | Configuração de empresa + NFS-e no ACBr |
+| `acbr_issue_nfse.test.ts` | Emissão de DPS + consulta NFS-e |
+
+### Bloqueios Conhecidos
+
+1. **Provedor `ISSSaoPaulo`:** Retorna `"URL de Homologação não informada"` — provedor local SP sem suporte a homologação no ACBr.
+2. **Provedor `nacional`:** DPS processada mas retorna `E0120` — `"IM do prestador não deve ser informado, pois não existem informações complementares registradas no CNC NFS-e do município emissor"`. A empresa precisa ser registrada manualmente em [gov.br/nfse](https://www.gov.br/nfse).
+
+### Setup das Variáveis de Ambiente
+
+```env
+ACBR_BASE_URL="https://proxy.api.acbr.net.br"
+ACBR_TOKEN="seu_token_acbr"
+```
+
 Desenvolvido por [mobilecosta](https://github.com/mobilecosta)
