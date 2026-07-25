@@ -14,13 +14,13 @@ describe('ACBr Issue NFS-e Tests', () => {
   it('should try to issue NFS-e (DPS)', async () => {
     const authData = await authenticate(clientId, clientSecret);
     const dpsData = {
-      provedor: 'padrao',
+      provedor: 'nacional',
       ambiente: 'homologacao',
       referencia: 'TESTE-MANUS-' + Date.now(),
       infDPS: {
         tpAmb: 2,
         dhEmi: new Date().toISOString(),
-        dCompet: new Date().toISOString().split('T')[0],
+        dCompet: new Date(Date.now() - 86400000).toISOString().split('T')[0],
         prest: {
           CNPJ: cnpj
         },
@@ -30,12 +30,9 @@ describe('ACBr Issue NFS-e Tests', () => {
         },
         serv: {
           cServ: {
-            cTribNac: '0101',
+            cTribNac: '010701',
             cNBS: '101010000',
             xDescServ: 'SERVICO DE TESTE API ACBR'
-          },
-          locPrest: {
-            cLocPrestacao: '3550308'
           }
         },
         IBSCBS: {
@@ -46,7 +43,7 @@ describe('ACBr Issue NFS-e Tests', () => {
           valores: {
             trib: {
               gIBSCBS: {
-                CST: '000',
+                CST: '100',
                 cClassTrib: '100000'
               }
             }
@@ -59,6 +56,9 @@ describe('ACBr Issue NFS-e Tests', () => {
           trib: {
             tribMun: {
               tribISSQN: 1
+            },
+            totTrib: {
+              indTotTrib: 0
             }
           }
         }

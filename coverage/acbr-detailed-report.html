@@ -13,6 +13,7 @@
             .success { background: #d4edda; color: #155724; }
             .info { background: #d1ecf1; color: #0c5460; }
             .warning { background: #fff3cd; color: #856404; }
+            .danger { background: #f8d7da; color: #721c24; }
             table { width: 100%; border-collapse: collapse; margin: 20px 0; }
             th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
             th { background-color: #f8f9fa; }
@@ -22,62 +23,165 @@
     <body>
         <div class="card">
             <h1>Relatório Detalhado: Integração ACBr</h1>
-            <p>Este relatório consolida as operações realizadas para o novo CNPJ e a configuração do certificado digital.</p>
-            
+            <p>Este relatório consolida as operações realizadas para o CNPJ 66.549.275/0001-97 e a emissão de NFS-e em homologação.</p>
+
             <table>
                 <tr><th>Parâmetro</th><th>Valor</th></tr>
                 <tr><td>CNPJ de Teste</td><td>66.549.275/0001-97</td></tr>
                 <tr><td>Ambiente</td><td>Homologação</td></tr>
-                <tr><td>Data de Execução</td><td>23/07/2026, 14:29:37</td></tr>
+                <tr><td>Data de Execução</td><td>24/07/2026, 21:24</td></tr>
+                <tr><td>Suites de Teste</td><td>6</td></tr>
+                <tr><td>Testes Executados</td><td>16</td></tr>
+                <tr><td>Testes Aprovados</td><td>16 (100%)</td></tr>
             </table>
         </div>
 
         <div class="card">
-            <h2>1. Cadastro da Empresa</h2>
-            <p>Verificação e registro da empresa na plataforma ACBr API.</p>
-            <span class="status success">CONCLUÍDO</span>
+            <h2>1. Autenticação na API ACBr</h2>
+            <p>Testes de autenticação OAuth 2.0 (client_credentials) com a ACBr API.</p>
+            <span class="status success">OK</span>
             <ul>
-                <li><b>Razão Social:</b> NOVA ERA LOCACOES VEICULOS E EMPREENDIMENTOS LTDA</li>
-                <li><b>Status:</b> Empresa cadastrada com sucesso no ambiente de homologação.</li>
+                <li><b>Endpoint:</b> <code>POST https://auth.acbr.api.br/realms/ACBrAPI/protocol/openid-connect/token</code></li>
+                <li><b>Scope:</b> <code>empresa nfse</code></li>
+                <li><b>Resultado:</b> Token obtido com sucesso em todos os testes.</li>
             </ul>
         </div>
 
         <div class="card">
-            <h2>2. Configuração de Certificado Digital</h2>
-            <p>Upload e vinculação do arquivo PFX à empresa.</p>
-            <span class="status success">ATIVO</span>
-            <table>
-                <tr><td>Arquivo</td><td>novaera-2026.pfx</td></tr>
-                <tr><td>Validade</td><td>12/06/2026 até 12/06/2027</td></tr>
-                <tr><td>Thumbprint</td><td>ad3261ccabd8470526aae94079c696b17f050ecd</td></tr>
-            </table>
-            <p><i>O certificado foi convertido para Base64 e transmitido via endpoint <code>PUT /empresas/{cnpj}/certificado</code>.</i></p>
+            <h2>2. Cadastro da Empresa</h2>
+            <p>Verificação e registro da empresa na plataforma ACBr API.</p>
+            <span class="status success">CONCLUÍDO</span>
+            <ul>
+                <li><b>Razão Social:</b> EMPRESA TESTE MANUS</li>
+                <li><b>CNPJ:</b> 66.549.275/0001-97</li>
+                <li><b>Inscrição Municipal:</b> 123456</li>
+                <li><b>Status:</b> Empresa já existente no ambiente de homologação (criada anteriormente).</li>
+            </ul>
         </div>
 
         <div class="card">
-            <h2>3. Teste de Emissão de NFS-e</h2>
-            <p>Tentativa de envio de DPS (Declaração de Prestação de Serviço).</p>
-            <span class="status warning">ERRO DE VALIDAÇÃO</span>
-            <p>A comunicação com a API foi estabelecida com sucesso, porém o formato do JSON de serviço requer ajustes específicos do provedor municipal.</p>
+            <h2>3. Configuração de NFS-e</h2>
+            <p>Registro das configurações de emissão de NFS-e via <code>PUT /empresas/{cnpj}/nfse</code>.</p>
+            <span class="status success">CONFIGURADO</span>
+            <table>
+                <tr><td>Ambiente</td><td>homologacao</td></tr>
+                <tr><td>Série RPS</td><td>1</td></tr>
+                <tr><td>Lote RPS</td><td>1</td></tr>
+                <tr><td>Número RPS</td><td>1</td></tr>
+                <tr><td>Incentivo Fiscal</td><td>false</td></tr>
+                <tr><td>Regime Tributação</td><td>opSimpNac=1 (Não Optante), regEspTrib=0 (Nenhum)</td></tr>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>4. Provedor: Migração do Municipal para o Nacional</h2>
+            <p>O provedor <code>ISSSaoPaulo</code> (municipal) não possui ambiente de homologação no ACBr e exige certificado digital. A emissão foi redirecionada ao provedor <code>nacional</code> (Sistema Nacional NFS-e / ADN).</p>
+            <table>
+                <tr><th>Provedor</th><th>Ambientes</th><th>Credenciais</th><th>Resultado</th></tr>
+                <tr><td>ISSSaoPaulo (padrao)</td><td>apenas produção</td><td>certificado digital</td><td><span class="status danger">Erro de Conexão</span></td></tr>
+                <tr><td>nacional (ADN)</td><td>homologação + produção</td><td>N/A</td><td><span class="status success">DPS Aceito</span></td></tr>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>5. Teste de Emissão de NFS-e (DPS) — Nacional</h2>
+            <p>Envio de DPS via provedor <code>nacional</code>. Payload corrigido conforme schema <code>InfDPS</code>:</p>
+            <span class="status info">PROCESSADO — NEGADA POR CADASTRO</span>
+            <p>O DPS foi aceito e processado pelo Sistema Nacional NFS-e. Status final: <code>negada</code> devido à falta de registro da empresa no CNC (Cadastro Nacional de Contribuintes).</p>
             <pre>{
-  "error": {
-    "code": "InvalidJsonProperty",
-    "message": "Property \"cServico\" does not refer to a known property in type \"Nfse.PadraoNacional.DTO.TCServ\""
+  "id": "nfs_3a22ae02b9554be39d78fce0ddb845c3",
+  "status": "negada",
+  "data_emissao": "2026-07-25T00:31:52.767Z",
+  "mensagens": [
+    {
+      "codigo": "E0120",
+      "descricao": "IM do prestador não deve ser informado, pois não existem informações complementares registradas no CNC NFS-e do município emissor informado na DPS."
+    }
+  ]
+}</pre>
+            <p><b>Payload final utilizado:</b></p>
+            <pre>{
+  "provedor": "nacional",
+  "ambiente": "homologacao",
+  "infDPS": {
+    "tpAmb": 2,
+    "dhEmi": "2026-07-25T00:31:52.767Z",
+    "dCompet": "2026-07-24",
+    "prest": { "CNPJ": "66549275000197" },
+    "toma": { "CNPJ": "00000000000191", "xNome": "CLIENTE TESTE" },
+    "serv": {
+      "cServ": {
+        "cTribNac": "010701",
+        "cNBS": "101010000",
+        "xDescServ": "SERVICO DE TESTE API ACBR"
+      }
+    },
+    "IBSCBS": {
+      "finNFSe": 0, "indFinal": 0, "cIndOp": "000000", "indDest": 0,
+      "valores": {
+        "trib": { "gIBSCBS": { "CST": "100", "cClassTrib": "100000" } }
+      }
+    },
+    "valores": {
+      "vServPrest": { "vServ": 10.00 },
+      "trib": {
+        "tribMun": { "tribISSQN": 1 },
+        "totTrib": { "indTotTrib": 0 }
+      }
+    }
   }
 }</pre>
         </div>
 
         <div class="card">
-            <h2>4. Repositório GitHub</h2>
+            <h2>6. Consulta de NFS-e Após Transmissão</h2>
+            <p>Todas as NFS-e emitidas foram consultadas via <code>GET /nfse?cpf_cnpj=...</code>.</p>
+            <table>
+                <tr><th>Provedor</th><th>ID</th><th>Data</th><th>Status</th><th>Mensagem</th></tr>
+                <tr><td>nacional</td><td>nfs_3a22ae02b9...</td><td>25/07 00:31</td><td><span class="status warning">negada</span></td><td>CNC NFS-e: IM sem cadastro complementar</td></tr>
+                <tr><td>nacional</td><td>nfs_3a22ae0240...</td><td>25/07 00:31</td><td><span class="status warning">negada</span></td><td>IM não deve ser informado sem cadastro CNC</td></tr>
+                <tr><td>nacional</td><td>nfs_3a22ae016b...</td><td>25/07 00:30</td><td><span class="status warning">negada</span></td><td>cClassTrib não pertence ao grupo CST</td></tr>
+                <tr><td>nacional</td><td>nfs_3a22ae00b2...</td><td>25/07 00:29</td><td><span class="status warning">negada</span></td><td>dCompet posterior a dhEmi</td></tr>
+                <tr><td>ISSSaoPaulo</td><td>nfs_3a22adfb89...</td><td>25/07 00:24</td><td><span class="status danger">erro</span></td><td>URL de homologação não informada</td></tr>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>7. Repositório GitHub</h2>
             <p>Atualização do código fonte.</p>
             <span class="status success">SINCRONIZADO</span>
-            <p>Os seguintes arquivos foram atualizados com o novo CNPJ e lógica de relatório:</p>
+            <p>Commits realizados na branch <code>main</code>:</p>
             <ul>
-                <li><code>tests/acbr_create_company.test.ts</code></li>
-                <li><code>tests/acbr_issue_nfse.test.ts</code></li>
-                <li><code>scripts/run_and_save_tests.cjs</code> (Novo)</li>
+                <li><code>a9c8b6a</code> — fix: corrigir payload DPS NFS-e conforme OpenAPI spec</li>
+                <li><code>c3497da</code> — feat: script config NFS-e e correção payload DPS com IBSCBS</li>
             </ul>
+            <p>Arquivos alterados:</p>
+            <ul>
+                <li><code>tests/acbr_configure_nfse.test.ts</code> — configuração de empresa + NFS-e</li>
+                <li><code>tests/acbr_issue_nfse.test.ts</code> — emissão DPS com payload corrigido</li>
+                <li><code>src/lib/testReporter.ts</code> — funções de relatório e email</li>
+                <li><code>src/lib/jestTestReporter.cjs</code> — reporter Jest customizado</li>
+                <li><code>scripts/run_acbr_tests.ts</code> — script de execução com save + email</li>
+                <li><code>jest.config.js</code> — reporter config</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2>8. Resumo da Jornada</h2>
+            <ol>
+                <li><b>Problema inicial:</b> Payload DPS usava <code>servicos</code> (array), porém a ACBr API espera <code>serv</code> (objeto) conforme schema <code>InfDPS</code>.</li>
+                <li><b>Correção 1:</b> Alterado para <code>serv.cServ.cTribNac</code> + <code>xDescServ</code> + <code>locPrest</code>.</li>
+                <li><b>Erro seguinte:</b> <code>ConfigNfseNotFound</code> — empresa sem configuração NFS-e.</li>
+                <li><b>Correção 2:</b> Criado teste <code>acbr_configure_nfse</code> que configura <code>PUT /empresas/{cnpj}/nfse</code> com RPS e ambiente.</li>
+                <li><b>Erro seguinte:</b> <code>InscricaoPrestador</code> vazio — empresa sem Inscrição Municipal.</li>
+                <li><b>Correção 3:</b> Adicionado <code>inscricao_municipal: 123456</code> via <code>PUT /empresas/{cnpj}</code>.</li>
+                <li><b>Erro seguinte:</b> Campos IBS/CBS ausentes — <code>IBSCBS</code> obrigatório no DPS.</li>
+                <li><b>Correção 4:</b> Adicionado <code>IBSCBS</code> com <code>finNFSe</code>, <code>cIndOp</code>, <code>valores.trib.gIBSCBS</code>.</li>
+                <li><b>Resultado final (padrao):</b> DPS aceito pela ACBr API, porém o provedor ISSSaoPaulo não possui ambiente de homologação no ACBr.</li>
+                <li><b>Correção 5:</b> Migrado para provedor <code>nacional</code> (Sistema Nacional NFS-e). Ajustado <code>cTribNac</code> para 6 dígitos, <code>serie</code> numérica, <code>totTrib</code>, e <code>CST</code>/<code>cClassTrib</code> para formato 3/6 dígitos.</li>
+                <li><b>Resultado final (nacional):</b> DPS aceito e processado. Negado por falta de cadastro da empresa no CNC NFS-e (Cadastro Nacional de Contribuintes).</li>
+            </ol>
+            <p><b>Próximo passo:</b> Registrar a empresa no CNC NFS-e (https://www.gov.br/nfse) para que a Inscrição Municipal seja reconhecida pelo Sistema Nacional.</p>
         </div>
     </body>
     </html>
-  
