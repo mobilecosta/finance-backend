@@ -30,7 +30,7 @@ export class TestController {
             id: true,
             createdAt: true,
             updatedAt: true,
-            // Omitimos o HTML gigante na listagem para performance
+            reportHtml: true,
           }
         }),
         prisma.test.count(),
@@ -41,6 +41,7 @@ export class TestController {
         id: test.id,
         date: test.createdAt.toLocaleDateString('pt-BR'),
         time: test.createdAt.toLocaleTimeString('pt-BR'),
+        reportHtml: test.reportHtml,
         createdAt: test.createdAt,
         updatedAt: test.updatedAt
       }));
