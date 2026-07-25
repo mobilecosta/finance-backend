@@ -30,11 +30,26 @@ describe('ACBr Issue NFS-e Tests', () => {
         },
         serv: {
           cServ: {
-            cTribNac: '010701',
+            cTribNac: '0101',
+            cNBS: '101010000',
             xDescServ: 'SERVICO DE TESTE API ACBR'
           },
           locPrest: {
             cLocPrestacao: '3550308'
+          }
+        },
+        IBSCBS: {
+          finNFSe: 0,
+          indFinal: 0,
+          cIndOp: '000000',
+          indDest: 0,
+          valores: {
+            trib: {
+              gIBSCBS: {
+                CST: '000',
+                cClassTrib: '100000'
+              }
+            }
           }
         },
         valores: {
@@ -57,7 +72,9 @@ describe('ACBr Issue NFS-e Tests', () => {
         query: { ambiente: 'homologacao' }
       });
       expect(result).toBeDefined();
+      console.log('✅ NFS-e emitida com sucesso:', JSON.stringify(result, null, 2));
     } catch (e) {
+      console.log('❌ Falha na emissão NFS-e:', e instanceof Error ? e.message : e);
       expect(e).toBeDefined();
     }
   });
