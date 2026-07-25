@@ -9,6 +9,7 @@ import { execSync } from 'child_process';
 import financeRoutes from './routes/finance.js';
 import authRoutes from './routes/auth.js';
 import acbrRoutes from './routes/acbr.js';
+import testRoutes from './routes/tests.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +26,6 @@ async function runPrismaMigrations() {
     console.log('Migrações do Prisma executadas com sucesso.');
   } catch (error) {
     console.error('Erro ao executar migrações do Prisma:', error);
-    // process.exit(1); // Não vamos encerrar o processo para permitir que o servidor tente rodar
   }
 }
 
@@ -38,7 +38,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Swagger Documentation (Load JSON manually to avoid ESM import issues on Vercel)
+// Swagger Documentation
 try {
   const swaggerPath = path.resolve(process.cwd(), 'src', 'swagger.json');
   const swaggerPathDist = path.resolve(process.cwd(), 'dist', 'swagger.json');
@@ -78,163 +78,50 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/acbr', acbrRoutes);
+app.use('/api/tests', testRoutes);
 
-// Servir relatórios de cobertura de testes.
-// O `express.static` não usa `report.html` como arquivo padrão, por isso
-// a rota raiz precisa enviar o relatório explicitamente.
-// Rota para o relatório consolidado do Jest (vinda do banco de dados)
-// Listagem de testes para o frontend
-app.get('/api/tests', async (req, res) => {
-  try {
-    const tests = await prisma.test.findMany({
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        createdAt: true,
-        updatedAt: true,
-        // Não enviamos o HTML gigante na listagem para performance, 
-        // a menos que o frontend peça um específico
-      }
-    });
-    res.json(tests);
-  } catch (error) {
-    console.error('Erro ao listar testes:', error);
-    res.status(500).json({ error: 'Erro interno ao listar testes.' });
-  }
-});
-
-// Detalhes de um teste específico
-app.get('/api/tests/:id', async (req, res) => {
-  try {
-    const test = await prisma.test.findUnique({
-      where: { id: parseInt(req.params.id) }
-    });
-    if (!test) return res.status(404).json({ error: 'Teste não encontrado' });
-    res.json(test);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar teste' });
-  }
-});
-
+// Rotas legadas para compatibilidade
 app.get('/tests', async (req, res) => {
   try {
-    const latestTest = await prisma.test.findFirst({
-      orderBy: { createdAt: 'desc' },
-    });
-
+    const latestTest = await prisma.test.findFirst({ orderBy: { createdAt: 'desc' } });
     if (latestTest) {
       res.setHeader('Content-Type', 'text/html');
       return res.send(latestTest.reportHtml);
     }
-    
-    // Fallback para arquivo local
     const reportPath = path.resolve(process.cwd(), 'coverage', 'report.html');
-    if (fs.existsSync(reportPath)) {
-      return res.sendFile(reportPath);
-    }
-    
-    res.status(404).send('Relatório de testes não encontrado no banco ou localmente.');
+    if (fs.existsSync(reportPath)) return res.sendFile(reportPath);
+    res.status(404).send('Relatório não encontrado.');
   } catch (error) {
-    console.error('Erro ao buscar relatório de testes:', error);
-    res.status(500).send('Erro interno ao buscar relatório.');
+    res.status(500).send('Erro interno.');
   }
 });
 
 app.get('/tests/pdf', async (req, res) => {
   try {
-    const latestTest = await prisma.test.findFirst({
-      orderBy: { createdAt: 'desc' },
-    });
-
+    const latestTest = await prisma.test.findFirst({ orderBy: { createdAt: 'desc' } });
     if (latestTest && latestTest.reportPdf) {
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename=report.pdf');
       return res.send(latestTest.reportPdf);
     }
-
-    // Se não houver no banco, tenta gerar localmente
-    const scriptPath = path.resolve(process.cwd(), 'scripts', 'generatePdf.ts');
-    const pdfPath = path.resolve(process.cwd(), 'coverage', 'report.pdf');
-    
-    execSync(`npx tsx ${scriptPath}`, { stdio: 'inherit' });
-
-    if (fs.existsSync(pdfPath)) {
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'attachment; filename=report.pdf');
-      return res.sendFile(pdfPath);
-    }
-    
-    res.status(404).send('PDF não encontrado e falha ao gerar.');
+    res.status(404).send('PDF não encontrado.');
   } catch (error) {
-    console.error('Erro na rota /tests/pdf:', error);
-    res.status(500).send('Erro interno ao processar o PDF.');
+    res.status(500).send('Erro interno.');
   }
 });
 
-app.get('/coverage', async (req, res) => {
-  try {
-    const latestTest = await prisma.test.findFirst({
-      orderBy: { createdAt: 'desc' },
-    });
-    if (latestTest) {
-      res.setHeader('Content-Type', 'text/html');
-      return res.send(latestTest.reportHtml);
-    }
-
-    // Fallback for local file
-    const reportPath = path.resolve(process.cwd(), 'coverage', 'report.html');
-    if (fs.existsSync(reportPath)) {
-      return res.sendFile(reportPath);
-    }
-
-    res.status(404).send('Nenhum relatório de cobertura encontrado.');
-  } catch (error) {
-    console.error('Erro ao buscar relatório:', error);
-    res.status(500).send('Erro interno ao buscar relatório.');
-  }
-});
-
-app.post('/coverage', async (req, res) => {
-  try {
-    const { reportHtml, reportPdf } = req.body;
-
-    if (!reportHtml) {
-      return res.status(400).json({ message: 'reportHtml é obrigatório' });
-    }
-
-    const data: any = { reportHtml };
-
-    if (reportPdf) {
-      data.reportPdf = Buffer.from(reportPdf, 'base64');
-    }
-
-    const saved = await prisma.test.create({ data });
-
-    res.status(201).json({ message: 'Relatório salvo com sucesso', id: saved.id });
-  } catch (error) {
-    console.error('Erro ao salvar relatório:', error);
-    res.status(500).json({ message: 'Erro interno ao salvar relatório' });
-  }
-});
-
-app.use('/coverage', express.static(path.resolve(process.cwd(), 'coverage', 'lcov-report')));
-
-// Redirecionamento amigável para a raiz da cobertura
-app.get('/reports', (req, res) => res.redirect('/tests'));
+app.get('/coverage', (req, res) => res.redirect('/tests'));
+app.use('/coverage-static', express.static(path.resolve(process.cwd(), 'coverage', 'lcov-report')));
 
 app.get('/', (req, res) => {
   res.json({ 
     message: 'Finance Pro API', 
     docs: '/docs', 
-    coverage: '/coverage',
-    reports: '/reports',
-    tests: '/tests',
-    tests_pdf: '/tests/pdf',
+    api_tests: '/api/tests',
     health: '/health' 
   });
 });
 
-// Export for Vercel
 export default app;
 
 if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
