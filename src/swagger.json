@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://finance-backend-liard.vercel.app",
+      "url": "https://finance-backend-mobile.vercel.app",
       "description": "Servidor de Produção (Vercel)"
     },
     {
@@ -549,6 +549,86 @@
         "responses": {
           "200": { "description": "Metadados da cidade" },
           "502": { "description": "Erro na comunicação com ACBr" }
+        }
+      }
+    },
+    "/api/acbr-tests/run": {
+      "post": {
+        "summary": "Executar todos os testes ACBr (16 testes, 6 suítes)",
+        "tags": ["ACBr"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Testes executados com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "timestamp": { "type": "string", "format": "date-time" },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "total": { "type": "integer" },
+                        "passed": { "type": "integer" },
+                        "failed": { "type": "integer" },
+                        "durationMs": { "type": "integer" },
+                        "suites": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": { "type": "string" },
+                              "passed": { "type": "integer" },
+                              "failed": { "type": "integer" },
+                              "total": { "type": "integer" }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "reportHtml": { "type": "string", "description": "Relatório HTML completo dos testes" },
+                    "steps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "suite": { "type": "string" },
+                          "name": { "type": "string" },
+                          "method": { "type": "string" },
+                          "url": { "type": "string" },
+                          "status": { "type": "string", "enum": ["ok", "fail"] },
+                          "durationMs": { "type": "number" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Erro ao executar testes ACBr" }
+        }
+      }
+    },
+    "/api/acbr-tests/report": {
+      "get": {
+        "summary": "Obter relatório HTML dos testes ACBr",
+        "tags": ["ACBr"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Página HTML com relatório detalhado",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": { "description": "Erro ao gerar relatório" }
         }
       }
     }
