@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
@@ -26,12 +26,7 @@ async function saveCoverageReport() {
   try {
     if (!fs.existsSync(lcovHtmlPath)) {
       console.log('Relatório LCOV HTML não encontrado em', lcovHtmlPath);
-      console.log('Tentando gerar com Jest --coverage (todos os testes)...');
-      execSync('NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules npx jest --coverage --no-cache', {
-        stdio: 'inherit',
-        timeout: 300000,
-        cwd: process.cwd(),
-      });
+      console.log('Build Vercel — pulando execução do Jest (testes rodam via API /api/acbr-tests/run)');
     }
 
     const reportHtml = findReportHtml();

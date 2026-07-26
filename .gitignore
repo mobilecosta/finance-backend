@@ -8,3 +8,5 @@ dist
 .vercel
 coverage/
 prisma/test.db
+
+.vercel
