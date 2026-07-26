@@ -54,23 +54,40 @@ try {
   console.error('Failed to load swagger.json', error);
 }
 
-const CSS_URL = "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css";
-const JS_URLS = [
-  "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-bundle.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-standalone-preset.js"
-];
 
-app.use('/docs', swaggerUi.serve);
+
 app.get('/docs', (req, res) => {
   if (!swaggerDocument) {
     return res.status(503).send(`<html><body style="font-family:sans-serif;padding:40px;background:#1a1a2e;color:#eee"><h1>📄 Swagger Documentation</h1><p>Documentação indisponível — spec não carregado.</p><pre style="background:#16213e;padding:16px;border-radius:8px">Tente: <a href="/health" style="color:#4fc3f7">/health</a></pre></body></html>`);
   }
-  res.send(
-    swaggerUi.generateHTML(swaggerDocument, {
-      customCssUrl: CSS_URL,
-      customJs: JS_URLS,
-    })
-  );
+  const specJson = JSON.stringify(swaggerDocument);
+  res.send(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finance Pro API - Swagger</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css">
+<style>html{box-sizing:border-box}*,*:before,*:after{box-sizing:inherit}body{margin:0;background:#fafafa}.swagger-ui .topbar{display:none}</style>
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-standalone-preset.js"></script>
+<script>
+window.onload = function() {
+  const ui = SwaggerUIBundle({
+    spec: ${specJson},
+    dom_id: '#swagger-ui',
+    deepLinking: true,
+    presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+    layout: 'StandaloneLayout',
+  });
+  window.ui = ui;
+};
+</script>
+</body>
+</html>`);
 });
 
 app.get('/health', (req, res) => {
