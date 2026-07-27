@@ -26,7 +26,7 @@ describe('ACBr Create Company Tests', () => {
         numero: '123',
         bairro: 'CENTRO',
         codigo_municipio: '3543303',
-        cidade: 'Ribeirão Pires',Ribeirão Pires',
+        cidade: 'Ribeirão Pires',
         uf: 'SP',
         cep: '01001000'
       }
@@ -42,7 +42,14 @@ describe('ACBr Create Company Tests', () => {
     } catch (e: any) {
       // If company already exists, the test should still pass
       if (e.message && e.message.includes("Empresa já cadastrada")) {
-        console.log("✅ Empresa já cadastrada, teste passou.");
+        console.log("ℹ️ Empresa já cadastrada, tentando atualizar dados...");
+        const updateResult = await proxyRequest(`/empresas/${cnpj}`, authData.access_token, {
+          method: 'PUT',
+          body: companyData,
+          query: { ambiente: 'homologacao' }
+        });
+        expect(updateResult).toBeDefined();
+        console.log("✅ Dados da empresa atualizados com sucesso.");
       } else {
         console.log("❌ Falha na criação da empresa:", e instanceof Error ? e.message : e);
         expect(e).toBeUndefined(); // Should not throw an unexpected error
