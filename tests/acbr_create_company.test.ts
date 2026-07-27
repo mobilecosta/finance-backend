@@ -11,17 +11,7 @@ describe('ACBr Create Company Tests', () => {
     expect(authData.access_token).toBeDefined();
   });
 
-  it('should check if company already exists', async () => {
-    const authData = await authenticate(clientId, clientSecret);
-    try {
-      const existing = await proxyRequest(`/empresas/${cnpj}`, authData.access_token, {
-        query: { ambiente: 'homologacao' }
-      });
-      expect(existing).toBeDefined();
-    } catch (e) {
-      expect(e).toBeDefined();
-    }
-  });
+
 
   it('should try to create company', async () => {
     const authData = await authenticate(clientId, clientSecret);
@@ -36,7 +26,7 @@ describe('ACBr Create Company Tests', () => {
         numero: '123',
         bairro: 'CENTRO',
         codigo_municipio: '3543303',
-        cidade: 'SAO PAULO',
+        cidade: 'Ribeirão Pires',Ribeirão Pires',
         uf: 'SP',
         cep: '01001000'
       }
@@ -49,8 +39,14 @@ describe('ACBr Create Company Tests', () => {
         query: { ambiente: 'homologacao' }
       });
       expect(result).toBeDefined();
-    } catch (e) {
-      expect(e).toBeDefined();
+    } catch (e: any) {
+      // If company already exists, the test should still pass
+      if (e.message && e.message.includes("Empresa já cadastrada")) {
+        console.log("✅ Empresa já cadastrada, teste passou.");
+      } else {
+        console.log("❌ Falha na criação da empresa:", e instanceof Error ? e.message : e);
+        expect(e).toBeUndefined(); // Should not throw an unexpected error
+      }
     }
   });
 });
