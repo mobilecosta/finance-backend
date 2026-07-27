@@ -123,7 +123,7 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
   const companyData = {
     cpf_cnpj: CNPJ, nome_razao_social: 'EMPRESA TESTE MANUS', nome_fantasia: 'TESTE MANUS',
     email: 'teste@manus.ai', fone: '11999999999',
-    endereco: { logradouro: 'RUA TESTE', numero: '123', bairro: 'CENTRO', codigo_municipio: '3543303', cidade: 'SAO PAULO', uf: 'SP', cep: '01001000' }
+    endereco: { logradouro: 'RUA TESTE', numero: '123', bairro: 'CENTRO', codigo_municipio: '3543303', cidade: 'RIBEIRAO PIRES', uf: 'SP', cep: '01001000' }
   };
   t = performance.now();
   try {
@@ -149,7 +149,7 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
   const empresaUpdate = {
     cpf_cnpj: CNPJ, nome_razao_social: 'EMPRESA TESTE MANUS', nome_fantasia: 'TESTE MANUS',
     email: 'teste@manus.ai', fone: '11999999999', inscricao_municipal: '123456',
-    endereco: { logradouro: 'RUA TESTE', numero: '123', bairro: 'CENTRO', codigo_municipio: '3543303', cidade: 'SAO PAULO', uf: 'SP', cep: '01001000' }
+    endereco: { logradouro: 'RUA TESTE', numero: '123', bairro: 'CENTRO', codigo_municipio: '3543303', cidade: 'RIBEIRAO PIRES', uf: 'SP', cep: '01001000' }
   };
   t = performance.now();
   try {
