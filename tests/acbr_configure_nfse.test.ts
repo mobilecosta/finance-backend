@@ -25,7 +25,7 @@ describe('ACBr Configure NFS-e', () => {
         numero: '123',
         bairro: 'CENTRO',
         codigo_municipio: '3543303',
-        cidade: 'SAO PAULO',
+        cidade: 'Ribeirão Pires',
         uf: 'SP',
         cep: '01001000'
       }
