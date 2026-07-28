@@ -279,7 +279,6 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
       tpAmb: 2,
       dhEmi: new Date().toISOString(),
       verAplic: '1.01',
-      serie: '001',
       nDPS: String(Math.floor(Math.random() * 1000000)),
       dCompet: new Date().toISOString().split('T')[0],
       tpEmit: 1,
