@@ -296,12 +296,13 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
   }
 
   t = performance.now();
+  let lastKey = '';
+  if (steps.find(s => s.name === 'should try to issue NFS-e (DPS)' && s.status === 'ok')) {
+    const lastStep = steps.find(s => s.name === 'should try to issue NFS-e (DPS)');
+    lastKey = (lastStep?.responseData as any)?.nfse?.chave || '';
+  }
+
   try {
-    let lastKey = '';
-    if (steps.find(s => s.name === 'should try to issue NFS-e (DPS)' && s.status === 'ok')) {
-      const lastStep = steps.find(s => s.name === 'should try to issue NFS-e (DPS)');
-      lastKey = (lastStep?.responseData as any)?.nfse?.chave || '';
-    }
     const listResult = await proxyRequest('/nfse', authData.access_token, { query: { cpf_cnpj: CNPJ, ambiente: 'homologacao', chave: lastKey } });
     steps.push({ suite: 'ACBr Issue NFS-e Tests', name: 'should list NFS-e for the CNPJ', method: 'GET', url: `${BASE_URL_HOM}/nfse?cpf_cnpj=${CNPJ}&ambiente=homologacao&chave=${lastKey}`, status: 'ok', durationMs: elapsed(t), responseData: listResult });
   } catch (e: any) {
