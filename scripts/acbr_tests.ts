@@ -120,7 +120,7 @@ async function run() {
   const companyData = {
     cpf_cnpj: CNPJ, nome_razao_social: 'EMPRESA TESTE MANUS', nome_fantasia: 'TESTE MANUS',
     email: 'teste@manus.ai', fone: '11999999999',
-    endereco: { logradouro: 'RUA TESTE', numero: '123', bairro: 'CENTRO', codigo_municipio: '3543303', cidade: 'SAO PAULO', uf: 'SP', cep: '01001000' }
+    endereco: { logradouro: 'RUA TESTE', numero: '123', bairro: 'CENTRO', codigo_municipio: '3543303', cidade: 'Ribeirão Pires', uf: 'SP', cep: '01001000' }
   };
   t = performance.now();
   try {
@@ -128,7 +128,12 @@ async function run() {
       const result = await proxyRequest('/empresas', authData.access_token, { method: 'POST', body: companyData, query: { ambiente: 'homologacao' } });
       steps.push({ suite: s4, name: 'should try to create company', method: 'POST', url: `${BASE_URL_HOM}/empresas?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), requestBody: companyData, responseData: result });
     } catch (e: any) {
-      steps.push({ suite: s4, name: 'should try to create company', method: 'POST', url: `${BASE_URL_HOM}/empresas?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), requestBody: companyData, responseData: { note: 'Company may already exist (expected)', error: e.message } });
+      if (e.message && e.message.includes("Empresa já cadastrada")) {
+        const updateResult = await proxyRequest(`/empresas/${CNPJ}`, authData.access_token, { method: 'PUT', body: companyData, query: { ambiente: 'homologacao' } });
+        steps.push({ suite: s4, name: 'should try to create company', method: 'PUT', url: `${BASE_URL_HOM}/empresas/${CNPJ}?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), requestBody: companyData, responseData: { note: 'Company already existed, updated instead', result: updateResult } });
+      } else {
+        steps.push({ suite: s4, name: 'should try to create company', method: 'POST', url: `${BASE_URL_HOM}/empresas?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), requestBody: companyData, responseData: { note: 'Company may already exist (expected)', error: e.message } });
+      }
     }
   } catch (e: any) {
     steps.push({ suite: s4, name: 'should try to create company', method: 'POST', url: `${BASE_URL_HOM}/empresas?ambiente=homologacao`, status: 'fail', durationMs: elapsed(t), requestBody: companyData, errorMessage: e.message });
@@ -147,7 +152,7 @@ async function run() {
   const empresaUpdate = {
     cpf_cnpj: CNPJ, nome_razao_social: 'EMPRESA TESTE MANUS', nome_fantasia: 'TESTE MANUS',
     email: 'teste@manus.ai', fone: '11999999999', inscricao_municipal: '123456',
-    endereco: { logradouro: 'RUA TESTE', numero: '123', bairro: 'CENTRO', codigo_municipio: '3543303', cidade: 'SAO PAULO', uf: 'SP', cep: '01001000' }
+    endereco: { logradouro: 'RUA TESTE', numero: '123', bairro: 'CENTRO', codigo_municipio: '3543303', cidade: 'Ribeirão Pires', uf: 'SP', cep: '01001000' }
   };
   t = performance.now();
   try {
@@ -210,8 +215,13 @@ async function run() {
 
   t = performance.now();
   try {
-    const listResult = await proxyRequest('/nfse', authData.access_token, { query: { cpf_cnpj: CNPJ, ambiente: 'homologacao', '$top': '5' } });
-    steps.push({ suite: s6, name: 'should list NFS-e for the CNPJ', method: 'GET', url: `${BASE_URL_HOM}/nfse?cpf_cnpj=${CNPJ}&ambiente=homologacao&$top=5`, status: 'ok', durationMs: elapsed(t), responseData: listResult });
+    let lastKey = '';
+    if (steps.find(s => s.name === 'should try to issue NFS-e (DPS)' && s.status === 'ok')) {
+      const lastStep = steps.find(s => s.name === 'should try to issue NFS-e (DPS)');
+      lastKey = (lastStep?.responseData as any)?.nfse?.chave || '';
+    }
+    const listResult = await proxyRequest('/nfse', authData.access_token, { query: { cpf_cnpj: CNPJ, ambiente: 'homologacao', chave: lastKey } });
+    steps.push({ suite: s6, name: 'should list NFS-e for the CNPJ', method: 'GET', url: `${BASE_URL_HOM}/nfse?cpf_cnpj=${CNPJ}&ambiente=homologacao&chave=${lastKey}`, status: 'ok', durationMs: elapsed(t), responseData: listResult });
   } catch (e: any) {
     steps.push({ suite: s6, name: 'should list NFS-e for the CNPJ', method: 'GET', url: `${BASE_URL_HOM}/nfse?cpf_cnpj=${CNPJ}&ambiente=homologacao&$top=5`, status: 'fail', durationMs: elapsed(t), errorMessage: e.message });
   }
