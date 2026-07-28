@@ -443,7 +443,7 @@ Integração com a API **ACBr** ([docs.opencode.ai/acbr](https://docs.opencode.a
 - **CNPJ:** `66549275000197`
 - **Inscrição Municipal:** `123456`
 - **IBGE:** `3543303`
-- **RPS:** `lote: 1`, `serie: "1"`, `numero: 1`
+- **RPS:** `lote: 1`, `serie: "001"`, `numero: 1`
 - **Ambiente:** homologação (`2`)
 
 ### Bloqueios Conhecidos

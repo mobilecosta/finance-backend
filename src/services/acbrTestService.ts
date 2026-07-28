@@ -249,7 +249,7 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
     steps.push({ suite: 'ACBr Configure NFS-e', name: 'should update company with inscricao_municipal for NFS-e', method: 'PUT', url: `${BASE_URL_HOM}/empresas/${CNPJ}?ambiente=homologacao`, status: 'fail', durationMs: elapsed(t), requestBody: empresaUpdate, errorMessage: e.message });
   }
 
-  const nfseConfig = { ambiente: 'homologacao', incentivo_fiscal: false, rps: { lote: 1, serie: '1', numero: 1 } };
+  const nfseConfig = { ambiente: 'homologacao', incentivo_fiscal: false, rps: { lote: 1, serie: '001', numero: 1 } };
   t = performance.now();
   try {
     try {
@@ -279,7 +279,7 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
       tpAmb: 2,
       dhEmi: new Date().toISOString(),
       verAplic: '1.01',
-      serie: '1',
+      serie: '001',
       nDPS: String(Math.floor(Math.random() * 1000000)),
       dCompet: new Date().toISOString().split('T')[0],
       tpEmit: 1,

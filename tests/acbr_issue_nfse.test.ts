@@ -23,6 +23,7 @@ describe(\'ACBr Issue NFS-e Tests\', () => {
         tpAmb: 2,
         dhEmi: new Date().toISOString(),
         dCompet: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+        serie: '001',
         prest: {
           CNPJ: cnpj
         },

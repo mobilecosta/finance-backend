@@ -52,7 +52,7 @@ describe('ACBr Configure NFS-e', () => {
       incentivo_fiscal: false,
       rps: {
         lote: 1,
-        serie: '1',
+        serie: '001',
         numero: 1
       }
     };
