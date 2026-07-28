@@ -18,10 +18,10 @@ export class AcbrTestController {
           total: result.total,
           passed: result.passed,
           failed: result.failed,
-          suites: result.suites.map(s => ({ name: s.name, passed: s.passed, failed: s.failed, total: s.total })),
+          suites: result.suites.map((s: any) => ({ name: s.name, passed: s.passed, failed: s.failed, total: s.total })),
           durationMs: result.durationMs,
         },
-        steps: result.steps.map(s => ({
+        steps: result.steps.map((s: any) => ({
           suite: s.suite,
           name: s.name,
           method: s.method,

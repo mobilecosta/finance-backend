@@ -32,6 +32,59 @@ function elapsed(start: number): number {
   return Math.round((performance.now() - start) * 100) / 100;
 }
 
+export function renderAcbrTestHtml(result: AcbrTestResult): string {
+  const suitesHtml = result.suites.map(s => `
+    <div style="margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
+      <h3 style="margin-top: 0;">${s.name}</h3>
+      <p>Passou: ${s.passed} / Falhou: ${s.failed} / Total: ${s.total}</p>
+    </div>
+  `).join('');
+
+  const stepsHtml = result.steps.map(s => `
+    <tr style="background-color: ${s.status === 'ok' ? '#e6fffa' : '#fff5f5'}">
+      <td style="padding: 8px; border: 1px solid #ddd;">${s.suite}</td>
+      <td style="padding: 8px; border: 1px solid #ddd;">${s.name}</td>
+      <td style="padding: 8px; border: 1px solid #ddd;">${s.method} ${s.url}</td>
+      <td style="padding: 8px; border: 1px solid #ddd;">${s.status}</td>
+      <td style="padding: 8px; border: 1px solid #ddd;">${s.durationMs}ms</td>
+    </tr>
+  `).join('');
+
+  return `
+    <html>
+      <body style="font-family: sans-serif; padding: 20px;">
+        <h1>Relatório de Testes ACBr</h1>
+        <p>Data: ${new Date().toLocaleString('pt-BR')}</p>
+        <p>Duração Total: ${result.durationMs}ms</p>
+        <h2>Suítes</h2>
+        ${suitesHtml}
+        <h2>Detalhes dos Passos</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background-color: #f8f9fa">
+              <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Suíte</th>
+              <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Teste</th>
+              <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Endpoint</th>
+              <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Status</th>
+              <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Duração</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${stepsHtml}
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `;
+}
+
+export async function runAndSaveAcbrTests(): Promise<{ result: AcbrTestResult; html: string }> {
+  const result = await runAcbrTests();
+  const html = renderAcbrTestHtml(result);
+  await saveTestReport(html);
+  return { result, html };
+}
+
 export async function runAcbrTests(): Promise<AcbrTestResult> {
   const steps: AcbrTestStep[] = [];
   const startAll = performance.now();
