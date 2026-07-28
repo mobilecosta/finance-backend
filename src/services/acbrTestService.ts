@@ -143,12 +143,12 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
   }
 
   t = performance.now();
-  try {
-    const cidades = await proxyRequest('/nfse/cidades', authData.access_token, { query: { ambiente: 'homologacao' } });
-    steps.push({ suite: 'ACBr Real API Tests', name: 'should fetch cities from ACBr API', method: 'GET', url: `${BASE_URL_HOM}/nfse/cidades?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), responseData: Array.isArray(cidades) ? { count: cidades.length, sample: cidades.slice(0, 3) } : cidades });
-  } catch (e: any) {
-    steps.push({ suite: 'ACBr Real API Tests', name: 'should fetch cities from ACBr API', method: 'GET', url: `${BASE_URL_HOM}/nfse/cidades?ambiente=homologacao`, status: 'fail', durationMs: elapsed(t), errorMessage: e.message });
-  }
+    try {
+      const cidades = await proxyRequest('/nfse/cidades', authData.access_token, { query: { ambiente: 'homologacao' } });
+      steps.push({ suite: 'ACBr Real API Tests', name: 'should fetch cities from ACBr API', method: 'GET', url: `${BASE_URL_HOM}/nfse/cidades?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), responseData: Array.isArray(cidades) ? { count: cidades.length, sample: cidades.slice(0, 3) } : cidades });
+    } catch (e: any) {
+      steps.push({ suite: 'ACBr Real API Tests', name: 'should fetch cities from ACBr API', method: 'GET', url: `${BASE_URL_HOM}/nfse/cidades?ambiente=homologacao`, status: 'fail', durationMs: elapsed(t), errorMessage: e.message, responseData: e.responseData || e });
+    }
 
   // ── Suite: Integration ─────────────────────────────────────
   t = performance.now();
@@ -160,13 +160,13 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
   }
 
   t = performance.now();
-  try {
-    const cidades = await proxyRequest('/nfse/cidades', authData.access_token, { query: { ambiente: 'homologacao' } });
-    const info = Array.isArray(cidades) ? { count: cidades.length, sample: cidades.slice(0, 3) } : cidades;
-    steps.push({ suite: 'ACBr Integration Tests', name: 'should fetch cities from ACBr API', method: 'GET', url: `${BASE_URL_HOM}/nfse/cidades?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), responseData: info });
-  } catch (e: any) {
-    steps.push({ suite: 'ACBr Integration Tests', name: 'should fetch cities from ACBr API', method: 'GET', url: `${BASE_URL_HOM}/nfse/cidades?ambiente=homologacao`, status: 'fail', durationMs: elapsed(t), errorMessage: e.message });
-  }
+    try {
+      const cidades = await proxyRequest('/nfse/cidades', authData.access_token, { query: { ambiente: 'homologacao' } });
+      const info = Array.isArray(cidades) ? { count: cidades.length, sample: cidades.slice(0, 3) } : cidades;
+      steps.push({ suite: 'ACBr Integration Tests', name: 'should fetch cities from ACBr API', method: 'GET', url: `${BASE_URL_HOM}/nfse/cidades?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), responseData: info });
+    } catch (e: any) {
+      steps.push({ suite: 'ACBr Integration Tests', name: 'should fetch cities from ACBr API', method: 'GET', url: `${BASE_URL_HOM}/nfse/cidades?ambiente=homologacao`, status: 'fail', durationMs: elapsed(t), errorMessage: e.message, responseData: e.responseData || e });
+    }
 
   t = performance.now();
   try {
@@ -243,7 +243,7 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
       const result = await proxyRequest(`/empresas/${CNPJ}`, authData.access_token, { method: 'PUT', body: empresaUpdate, query: { ambiente: 'homologacao' } });
       steps.push({ suite: 'ACBr Configure NFS-e', name: 'should update company with inscricao_municipal for NFS-e', method: 'PUT', url: `${BASE_URL_HOM}/empresas/${CNPJ}?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), requestBody: empresaUpdate, responseData: result });
     } catch (e: any) {
-      steps.push({ suite: 'ACBr Configure NFS-e', name: 'should update company with inscricao_municipal for NFS-e', method: 'PUT', url: `${BASE_URL_HOM}/empresas/${CNPJ}?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), requestBody: empresaUpdate, responseData: { error: e.message } });
+      steps.push({ suite: 'ACBr Configure NFS-e', name: 'should update company with inscricao_municipal for NFS-e', method: 'PUT', url: `${BASE_URL_HOM}/empresas/${CNPJ}?ambiente=homologacao`, status: 'fail', durationMs: elapsed(t), requestBody: empresaUpdate, errorMessage: e.message, responseData: e.responseData || e });
     }
   } catch (e: any) {
     steps.push({ suite: 'ACBr Configure NFS-e', name: 'should update company with inscricao_municipal for NFS-e', method: 'PUT', url: `${BASE_URL_HOM}/empresas/${CNPJ}?ambiente=homologacao`, status: 'fail', durationMs: elapsed(t), requestBody: empresaUpdate, errorMessage: e.message });
@@ -256,7 +256,7 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
       const result = await proxyRequest(`/empresas/${CNPJ}/nfse`, authData.access_token, { method: 'PUT', body: nfseConfig, query: { ambiente: 'homologacao' } });
       steps.push({ suite: 'ACBr Configure NFS-e', name: 'should configure NFS-e for the company', method: 'PUT', url: `${BASE_URL_HOM}/empresas/${CNPJ}/nfse?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), requestBody: nfseConfig, responseData: result });
     } catch (e: any) {
-      steps.push({ suite: 'ACBr Configure NFS-e', name: 'should configure NFS-e for the company', method: 'PUT', url: `${BASE_URL_HOM}/empresas/${CNPJ}/nfse?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), requestBody: nfseConfig, responseData: { error: e.message } });
+      steps.push({ suite: 'ACBr Configure NFS-e', name: 'should configure NFS-e for the company', method: 'PUT', url: `${BASE_URL_HOM}/empresas/${CNPJ}/nfse?ambiente=homologacao`, status: 'fail', durationMs: elapsed(t), requestBody: nfseConfig, errorMessage: e.message, responseData: e.responseData || e });
     }
   } catch (e: any) {
     steps.push({ suite: 'ACBr Configure NFS-e', name: 'should configure NFS-e for the company', method: 'PUT', url: `${BASE_URL_HOM}/empresas/${CNPJ}/nfse?ambiente=homologacao`, status: 'fail', durationMs: elapsed(t), requestBody: nfseConfig, errorMessage: e.message });
@@ -289,7 +289,7 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
       const result = await proxyRequest('/nfse/dps', authData.access_token, { method: 'POST', body: dpsData, query: { ambiente: 'homologacao' } });
       steps.push({ suite: 'ACBr Issue NFS-e Tests', name: 'should try to issue NFS-e (DPS)', method: 'POST', url: `${BASE_URL_HOM}/nfse/dps?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), requestBody: dpsData, responseData: result });
     } catch (e: any) {
-      steps.push({ suite: 'ACBr Issue NFS-e Tests', name: 'should try to issue NFS-e (DPS)', method: 'POST', url: `${BASE_URL_HOM}/nfse/dps?ambiente=homologacao`, status: 'fail', durationMs: elapsed(t), requestBody: dpsData, errorMessage: e.message, responseData: { error: e.message } });
+      steps.push({ suite: 'ACBr Issue NFS-e Tests', name: 'should try to issue NFS-e (DPS)', method: 'POST', url: `${BASE_URL_HOM}/nfse/dps?ambiente=homologacao`, status: 'fail', durationMs: elapsed(t), requestBody: dpsData, errorMessage: e.message, responseData: e.responseData || e });
     }
   } catch (e: any) {
     steps.push({ suite: 'ACBr Issue NFS-e Tests', name: 'should try to issue NFS-e (DPS)', method: 'POST', url: `${BASE_URL_HOM}/nfse/dps?ambiente=homologacao`, status: 'fail', durationMs: elapsed(t), requestBody: dpsData, errorMessage: e.message });
