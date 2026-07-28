@@ -44,9 +44,9 @@ export function renderAcbrTestHtml(result: AcbrTestResult): string {
     const rowId = `row-${index}`;
     const detailId = `detail-${index}`;
     
-    const requestBodyStr = s.requestBody ? JSON.stringify(s.requestBody, null, 2) : 'N/A';
-    const responseDataStr = s.responseData ? JSON.stringify(s.responseData, null, 2) : 'N/A';
-    const errorStr = s.errorMessage || 'N/A';
+    const requestBodyStr = s.requestBody ? (typeof s.requestBody === 'string' ? s.requestBody : JSON.stringify(s.requestBody, null, 2)) : 'N/A';
+    const responseDataStr = s.responseData ? (typeof s.responseData === 'string' ? s.responseData : JSON.stringify(s.responseData, null, 2)) : 'N/A';
+    const errorStr = s.errorMessage ? (typeof s.errorMessage === 'string' ? s.errorMessage : JSON.stringify(s.errorMessage, null, 2)) : 'N/A';
 
     return `
       <tr id="${rowId}" style="background-color: ${s.status === 'ok' ? '#e6fffa' : '#fff5f5'}; cursor: pointer;" onclick="document.getElementById('${detailId}').style.display = document.getElementById('${detailId}').style.display === 'none' ? 'table-row' : 'none'">
