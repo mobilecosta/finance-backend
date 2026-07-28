@@ -40,15 +40,39 @@ export function renderAcbrTestHtml(result: AcbrTestResult): string {
     </div>
   `).join('');
 
-  const stepsHtml = result.steps.map(s => `
-    <tr style="background-color: ${s.status === 'ok' ? '#e6fffa' : '#fff5f5'}">
-      <td style="padding: 8px; border: 1px solid #ddd;">${s.suite}</td>
-      <td style="padding: 8px; border: 1px solid #ddd;">${s.name}</td>
-      <td style="padding: 8px; border: 1px solid #ddd;">${s.method} ${s.url}</td>
-      <td style="padding: 8px; border: 1px solid #ddd;">${s.status}</td>
-      <td style="padding: 8px; border: 1px solid #ddd;">${s.durationMs}ms</td>
-    </tr>
-  `).join('');
+  const stepsHtml = result.steps.map((s, index) => {
+    const rowId = `row-${index}`;
+    const detailId = `detail-${index}`;
+    
+    const requestBodyStr = s.requestBody ? JSON.stringify(s.requestBody, null, 2) : 'N/A';
+    const responseDataStr = s.responseData ? JSON.stringify(s.responseData, null, 2) : 'N/A';
+    const errorStr = s.errorMessage || 'N/A';
+
+    return `
+      <tr id="${rowId}" style="background-color: ${s.status === 'ok' ? '#e6fffa' : '#fff5f5'}; cursor: pointer;" onclick="document.getElementById('${detailId}').style.display = document.getElementById('${detailId}').style.display === 'none' ? 'table-row' : 'none'">
+        <td style="padding: 8px; border: 1px solid #ddd;">${s.suite}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${s.name}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${s.method} ${s.url}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${s.status}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${s.durationMs}ms</td>
+      </tr>
+      <tr id="${detailId}" style="display: none; background-color: #fdfdfd;">
+        <td colspan="5" style="padding: 15px; border: 1px solid #ddd;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+              <h4 style="margin-top: 0; color: #444;">Requisição (Entrada)</h4>
+              <pre style="background: #f4f4f4; padding: 10px; border-radius: 4px; font-size: 12px; overflow-x: auto; max-height: 300px;">${requestBodyStr}</pre>
+            </div>
+            <div>
+              <h4 style="margin-top: 0; color: #444;">Resposta (Saída)</h4>
+              <pre style="background: #f4f4f4; padding: 10px; border-radius: 4px; font-size: 12px; overflow-x: auto; max-height: 300px;">${responseDataStr}</pre>
+              ${s.status === 'fail' ? `<h4 style="color: #e53e3e;">Erro</h4><pre style="background: #fff5f5; color: #c53030; padding: 10px; border-radius: 4px; font-size: 12px;">${errorStr}</pre>` : ''}
+            </div>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
 
   return `
     <html>
@@ -58,7 +82,7 @@ export function renderAcbrTestHtml(result: AcbrTestResult): string {
         <p>Duração Total: ${result.durationMs}ms</p>
         <h2>Suítes</h2>
         ${suitesHtml}
-        <h2>Detalhes dos Passos</h2>
+        <h2>Detalhes dos Passos (Clique na linha para ver detalhes)</h2>
         <table style="width: 100%; border-collapse: collapse;">
           <thead>
             <tr style="background-color: #f8f9fa">
@@ -181,14 +205,18 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
   t = performance.now();
   try {
     try {
-      const result = await proxyRequest('/empresas', authData.access_token, { method: 'POST', body: companyData, query: { ambiente: 'homologacao' } });
+            const result = await proxyRequest('/empresas', authData.access_token, {
+        method: 'POST',
+        body: companyData,
+        query: { ambiente: 'homologacao' }
+      });
       steps.push({ suite: 'ACBr Create Company Tests', name: 'should try to create company', method: 'POST', url: `${BASE_URL_HOM}/empresas?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), requestBody: companyData, responseData: result });
     } catch (e: any) {
       if (e.message && e.message.includes("Empresa já cadastrada")) {
         const updateResult = await proxyRequest(`/empresas/${CNPJ}`, authData.access_token, { method: 'PUT', body: companyData, query: { ambiente: 'homologacao' } });
-        steps.push({ suite: 'ACBr Create Company Tests', name: 'should try to create company', method: 'PUT', url: `${BASE_URL_HOM}/empresas/${CNPJ}?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), requestBody: companyData, responseData: { note: 'Company already existed, updated instead', result: updateResult } });
+        steps.push({ suite: 'ACBr Create Company Tests', name: 'should try to create company', method: 'PUT', url: `${BASE_URL_HOM}/empresas/${CNPJ}?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), requestBody: companyData, responseData: updateResult });
       } else {
-        steps.push({ suite: 'ACBr Create Company Tests', name: 'should try to create company', method: 'POST', url: `${BASE_URL_HOM}/empresas?ambiente=homologacao`, status: 'ok', durationMs: elapsed(t), requestBody: companyData, responseData: { note: 'Company may already exist (expected)', error: e.message } });
+        steps.push({ suite: 'ACBr Create Company Tests', name: 'should try to create company', method: 'POST', url: `${BASE_URL_HOM}/empresas?ambiente=homologacao`, status: 'fail', durationMs: elapsed(t), requestBody: companyData, errorMessage: e.message, responseData: e.responseData || e });
       }
     }
   } catch (e: any) {
@@ -277,7 +305,7 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
     const listResult = await proxyRequest('/nfse', authData.access_token, { query: { cpf_cnpj: CNPJ, ambiente: 'homologacao', chave: lastKey } });
     steps.push({ suite: 'ACBr Issue NFS-e Tests', name: 'should list NFS-e for the CNPJ', method: 'GET', url: `${BASE_URL_HOM}/nfse?cpf_cnpj=${CNPJ}&ambiente=homologacao&chave=${lastKey}`, status: 'ok', durationMs: elapsed(t), responseData: listResult });
   } catch (e: any) {
-    steps.push({ suite: 'ACBr Issue NFS-e Tests', name: 'should list NFS-e for the CNPJ', method: 'GET', url: `${BASE_URL_HOM}/nfse?cpf_cnpj=${CNPJ}&ambiente=homologacao&$top=5`, status: 'fail', durationMs: elapsed(t), errorMessage: e.message });
+    steps.push({ suite: 'ACBr Issue NFS-e Tests', name: 'should list NFS-e for the CNPJ', method: 'GET', url: `${BASE_URL_HOM}/nfse?cpf_cnpj=${CNPJ}&ambiente=homologacao&chave=${lastKey}`, status: 'fail', durationMs: elapsed(t), errorMessage: e.message, responseData: e.responseData || e });
   }
 
   return buildResult(steps, startAll);
