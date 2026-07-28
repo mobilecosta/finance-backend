@@ -276,6 +276,8 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
     infDPS: {
       tpAmb: 2, dhEmi: new Date().toISOString(),
       dCompet: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+      cLocEmi: '3543303',
+      xLocEmi: 'Ribeirão Pires',
       prest: { CNPJ: CNPJ },
       toma: { CNPJ: '00000000000191', xNome: 'CLIENTE TESTE' },
       serv: { cServ: { cTribNac: '010701', cNBS: '101010000', xDescServ: 'SERVICO DE TESTE API ACBR' } },
