@@ -272,17 +272,49 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
   }
 
   const dpsData = {
-    provedor: 'nacional', ambiente: 'homologacao', referencia: 'TESTE-MANUS-' + Date.now(),
+    provedor: 'nacional',
+    ambiente: 'homologacao',
+    referencia: 'TESTE-MANUS-' + Date.now(),
     infDPS: {
-      tpAmb: 2, dhEmi: new Date().toISOString(),
-      dCompet: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+      tpAmb: 2,
+      dhEmi: new Date().toISOString(),
+      verAplic: '1.01',
+      serie: '1',
+      nDPS: String(Math.floor(Math.random() * 1000000)),
+      dCompet: new Date().toISOString().split('T')[0],
+      tpEmit: 1,
       cLocEmi: '3543303',
       xLocEmi: 'Ribeirão Pires',
-      prest: { CNPJ: CNPJ },
-      toma: { CNPJ: '00000000000191', xNome: 'CLIENTE TESTE' },
-      serv: { cServ: { cTribNac: '010701', cNBS: '101010000', xDescServ: 'SERVICO DE TESTE API ACBR' } },
-      IBSCBS: { finNFSe: 0, indFinal: 0, cIndOp: '000000', indDest: 0, valores: { trib: { gIBSCBS: { CST: '100', cClassTrib: '100000' } } } },
-      valores: { vServPrest: { vServ: 10.00 }, trib: { tribMun: { tribISSQN: 1 }, totTrib: { indTotTrib: 0 } } }
+      prest: {
+        CNPJ: CNPJ,
+        im: '123456',
+        razaoSocial: 'EMPRESA EXEMPLO LTDA',
+        email: 'fiscal@empresa.com.br',
+        regTrib: {
+          opSimpNac: 1,
+          regEspTrib: 0
+        }
+      },
+      toma: {
+        cpf: '12345678909',
+        xNome: 'João da Silva',
+        email: 'joao@email.com'
+      },
+      serv: {
+        cLocPrestacao: '3543303',
+        cServ: {
+          cTribNac: '010700',
+          cNBS: '101010000',
+          xDescServ: 'Desenvolvimento de software sob encomenda'
+        }
+      },
+      valores: {
+        vServPrest: { vServ: 1500.00 },
+        trib: {
+          tribMun: { tribISSQN: 1, aliq: 2.00, vISSQN: 30.00, tpRetISS: 1 },
+          totTrib: { indTotTrib: 0 }
+        }
+      }
     }
   };
   t = performance.now();
