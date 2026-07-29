@@ -23,6 +23,14 @@ Construída com **Node.js**, **Express 5**, **TypeScript**, **Prisma ORM 6**, **
 ## Sumário
 
 - [Autenticação](#autenticacao)
+- [Padrão de Mensagens](#padrao-de-mensagens)
+  - [Mensagens de erro](#mensagens-de-erro)
+  - [Mensagens de sucesso](#mensagens-de-sucesso)
+  - [Mensagens de sucesso para coleções](#mensagens-de-sucesso-para-colecoes)
+  - [Requisições para coleções](#requisicoes-para-colecoes)
+    - [Paginação](#paginacao)
+    - [Ordenação](#ordenacao)
+    - [Filtros](#filtros)
 - [API Endpoints](#api-endpoints)
   - [Auth](#apiauth)
   - [Financeiro](#apifinance)
@@ -53,6 +61,121 @@ Authorization: Bearer <seu_token_jwt>
 
 ---
 
+## Padrão de Mensagens
+
+A API adota o padrão de mensagens do [PO UI](https://po-ui.io/guides/api) para requisições e respostas HTTP.
+
+### Mensagens de erro
+
+Todas as respostas com código HTTP 4xx e 5xx retornam:
+
+```
+{
+    "message": "Literal descrevendo o erro para o cliente"
+}
+```
+
+**Exemplos:**
+
+```json
+// 400 — validação
+{ "message": "client_id e client_secret são obrigatórios" }
+
+// 401 — autenticação
+{ "message": "Token inválido ou expirado" }
+
+// 404 — recurso não encontrado
+{ "error": "Account not found" }
+
+// 502 — erro no proxy ACBr
+{ "message": "Falha na autenticação ACBr: Invalid client credentials" }
+
+// 500 — erro interno
+{ "error": "Internal server error" }
+```
+
+> **Nota:** Os controladores `Auth` e `Acbr` usam o campo `message`, enquanto `Finance` e `Tests` usam `error`. A padronização para `{ code, message, detailedMessage }` está em andamento.
+
+### Mensagens de sucesso
+
+Respostas com código 2xx retornam diretamente a entidade resultante da operação:
+
+```
+GET /api/finance/accounts/1
+
+{
+    "id": 1,
+    "name": "Conta Corrente",
+    "balance": "1000.00",
+    ...
+}
+```
+
+### Mensagens de sucesso para coleções
+
+Endpoints que retornam listas utilizam o formato paginado:
+
+```
+{
+    "hasNext": true,
+    "items": [ ... ]
+}
+```
+
+O atributo `hasNext` indica se existe uma próxima página com mais registros.
+
+**Exemplo:**
+
+```json
+GET /api/finance/accounts?page=1&pageSize=10
+
+{
+    "hasNext": true,
+    "items": [
+        { "id": 1, "name": "Conta Corrente", "balance": "1000.00" },
+        { "id": 2, "name": "Poupança", "balance": "5000.00" }
+    ]
+}
+```
+
+### Requisições para coleções
+
+#### Paginação
+
+A paginação é definida pelos parâmetros `page` e `pageSize`:
+
+| Parâmetro | Tipo | Default | Descrição |
+|-----------|------|---------|-----------|
+| `page` | number | 1 | Número da página (maior que zero) |
+| `pageSize` | number | 20 | Registros por página (max 100) |
+
+A semântica é multiplicadora: `page=2` com `pageSize=20` retorna registros 21-40.
+
+```
+GET /api/finance/transactions?page=2&pageSize=10
+```
+
+#### Ordenação
+
+Parâmetro `order` com campos separados por vírgula:
+
+- Campos precedidos por `-` (hífen) indicam ordem decrescente
+- Campos sem sinal indicam ordem crescente
+
+```
+GET /api/finance/transactions?order=-date,amount
+```
+
+#### Filtros
+
+Enviados como parâmetros `property=value`:
+
+```
+GET /api/finance/transactions?type=expense&status=completed
+```
+
+---
+
 ## API Endpoints
 
 ### `/api/auth`
@@ -66,54 +189,91 @@ Authorization: Bearer <seu_token_jwt>
 | `GET` | `/api/auth/user` | Sim | Dados do usuário logado |
 
 **signup**
+
 ```json
-// POST /api/auth/signup
+POST /api/auth/signup
+
+// Request
 { "email": "user@email.com", "password": "123456", "fullName": "Nome" }
-// 201
-{ "token": "jwt...", "user": { "id": "uuid", "email": "...", "name": "...", "createdAt": "..." } }
+
+// Response 201
+{
+    "token": "jwt...",
+    "user": { "id": "uuid", "email": "...", "name": "...", "createdAt": "..." }
+}
+
+// Response 400
+{ "message": "User already registered" }
 ```
 
 **signin**
+
 ```json
-// POST /api/auth/signin
+POST /api/auth/signin
+
+// Request
 { "email": "user@email.com", "password": "123456" }
-// 200
-{ "token": "jwt...", "user": { "id": "uuid", "email": "...", "name": "...", "createdAt": "..." } }
+
+// Response 200
+{
+    "token": "jwt...",
+    "user": { "id": "uuid", "email": "...", "name": "...", "createdAt": "..." }
+}
+
+// Response 401
+{ "message": "Credenciais inválidas" }
 ```
 
-**callback** `GET /api/auth/callback?code=<code>&next=/dashboard`
+**callback**
 
-Redireciona com `?token=` (Accept: text/html) ou JSON.
+```
+GET /api/auth/callback?code=<supabase_code>&next=/dashboard
+
+// Response (Accept: text/html) → redirect com ?token=
+// Response (JSON) → 200 { token, user }
+```
 
 **user**
+
 ```
 GET /api/auth/user
 Authorization: Bearer <token>
-// 200
+
+// Response 200
 { "id": "uuid", "email": "...", "name": "...", "createdAt": "..." }
+
+// Response 401
+{ "message": "Token inválido ou expirado" }
 ```
 
 ---
 
 ### `/api/finance`
 
-Todas as rotas exigem `Authorization: Bearer <token>` (authMiddleware aplicado globalmente).
+Todas as rotas exigem `Authorization: Bearer <token>` e escopo do tenant do usuário autenticado.
 
 #### Dashboard
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `GET` | `/api/finance/dashboard/metrics` | Métricas: saldo total, receitas/despesas, mensal, categorias |
+| `GET` | `/api/finance/dashboard/metrics` | Métricas do dashboard |
 
 ```json
-// 200
+GET /api/finance/dashboard/metrics
+
+// Response 200
 {
-  "totalBalance": 5000.00,
-  "totalIncome": 10000.00,
-  "totalExpense": 5000.00,
-  "monthlyData": [{ "month": "2026-07", "income": 3000, "expense": 1500 }],
-  "categoryDistribution": [{ "category": "Alimentação", "amount": 1200, "percentage": 24 }],
-  "recentTransactions": []
+    "totalBalance": 5000.00,
+    "totalIncome": 10000.00,
+    "totalExpense": 5000.00,
+    "transactionCount": 42,
+    "monthlyData": [
+        { "month": "2026-07", "income": 3000, "expense": 1500 }
+    ],
+    "categoryDistribution": [
+        { "category": "Alimentação", "amount": 1200, "percentage": 24 }
+    ],
+    "recentTransactions": []
 }
 ```
 
@@ -121,70 +281,161 @@ Todas as rotas exigem `Authorization: Bearer <token>` (authMiddleware aplicado g
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `GET` | `/api/finance/accounts` | Lista contas |
+| `GET` | `/api/finance/accounts` | Lista contas (paginado) |
 | `GET` | `/api/finance/accounts/:id` | Conta por ID |
 | `POST` | `/api/finance/accounts` | Criar conta |
 | `PUT` | `/api/finance/accounts/:id` | Atualizar conta |
 | `DELETE` | `/api/finance/accounts/:id` | Remover conta |
 
 ```json
-// POST/PUT
+GET /api/finance/accounts?page=1&pageSize=10
+
+// Response 200
+{ "hasNext": false, "items": [ { "id": 1, "name": "Conta Corrente", ... } ] }
+```
+
+```json
+POST /api/finance/accounts
+
+// Request
 { "name": "Conta Corrente", "type": "checking", "balance": 1000, "color": "#3b82f6", "icon": "wallet.pass" }
-// Response
-{ "id": 1, "tenantId": 1, "userId": "uuid", "name": "Conta Corrente", "type": "checking", "balance": "1000.00", "isActive": true, "createdAt": "...", "updatedAt": "..." }
+
+// Response 201
+{ "id": 1, "tenantId": 1, "userId": "uuid", "name": "Conta Corrente", "type": "checking", "balance": "1000.00", "color": "#3b82f6", "icon": "wallet.pass", "isActive": true, "createdAt": "...", "updatedAt": "..." }
+
+// Response 404
+{ "error": "Account not found" }
 ```
 
 #### Categorias
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `GET` | `/api/finance/categories` | Lista categorias |
+| `GET` | `/api/finance/categories` | Lista categorias (paginado) |
 | `GET` | `/api/finance/categories/:id` | Categoria por ID |
 | `POST` | `/api/finance/categories` | Criar categoria |
 | `PUT` | `/api/finance/categories/:id` | Atualizar categoria |
 | `DELETE` | `/api/finance/categories/:id` | Remover categoria |
 
 ```json
-// POST/PUT
+GET /api/finance/categories?page=1&pageSize=20
+
+// Response 200
+{ "hasNext": false, "items": [ { "id": 1, "name": "Alimentação", "type": "expense", ... } ] }
+```
+
+```json
+POST /api/finance/categories
+
+// Request
 { "name": "Alimentação", "type": "expense", "color": "#10b981", "icon": "tag.fill" }
+
+// Response 201
+{ "id": 1, "name": "Alimentação", "type": "expense", "color": "#10b981", "icon": "tag.fill", "isActive": true, "createdAt": "...", "updatedAt": "..." }
 ```
 
 #### Transações
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `GET` | `/api/finance/transactions` | Lista transações (suporte `page`, `pageSize`) |
-| `POST` | `/api/finance/transactions` | Criar transação (atualiza saldo) |
+| `GET` | `/api/finance/transactions` | Lista transações (paginado, ordenável, filtrável) |
+| `POST` | `/api/finance/transactions` | Criar transação (atualiza saldo da conta) |
 | `PUT` | `/api/finance/transactions/:id` | Atualizar transação (recalcula saldo) |
 | `DELETE` | `/api/finance/transactions/:id` | Remover transação (reverte saldo) |
 
+**Parâmetros de consulta (GET):**
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `page` | number | Página (default 1) |
+| `pageSize` | number | Itens por página (default 20, max 100) |
+| `order` | string | Ordenação (ex: `-date,amount`) |
+| `type` | string | Filtro por tipo (`income`, `expense`) |
+| `status` | string | Filtro por status (`completed`, `pending`) |
+
 ```json
-// POST
+GET /api/finance/transactions?page=1&pageSize=10&order=-date&type=expense
+
+// Response 200
+{
+    "hasNext": true,
+    "items": [
+        {
+            "id": 1,
+            "accountId": 1,
+            "categoryId": 1,
+            "type": "expense",
+            "amount": "150.00",
+            "description": "Mercado",
+            "date": "2026-07-19",
+            "status": "completed",
+            "category": { "id": 1, "name": "Alimentação" },
+            "account": { "id": 1, "name": "Conta Corrente" }
+        }
+    ]
+}
+```
+
+```json
+POST /api/finance/transactions
+
+// Request
 { "accountId": 1, "categoryId": 1, "type": "expense", "amount": 150.00, "description": "Mercado", "date": "2026-07-19", "status": "completed" }
+
+// Response 201
+{ "id": 1, "type": "expense", "amount": "150.00", "description": "Mercado", "accountId": 1, "categoryId": 1, "date": "2026-07-19", "status": "completed", "createdAt": "..." }
 ```
 
 ---
 
 ### `/api/acbr`
 
-Proxy genérico para a API ACBr. Qualquer path após `/api/acbr` é encaminhado para a ACBr.
+Proxy genérico para a [API ACBr](https://dev.acbr.api.br). Qualquer path após `/api/acbr` é encaminhado sem transformação.
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| `POST` | `/api/acbr/auth` | Autentica na ACBr (`client_id` + `client_secret`) |
-| `*` | `/api/acbr/*` | Proxy: encaminha method + path + body + query para ACBr |
+| Método | Endpoint | Auth | Descrição |
+|--------|----------|------|-----------|
+| `POST` | `/api/acbr/auth` | Não | Autentica na ACBr |
+| `*` | `/api/acbr/*` | Bearer | Proxy para ACBr (method + path + body + query) |
 
-Query `?ambiente=homologacao` (default) ou `?ambiente=producao` define o ambiente.
+**Parâmetros:**
+
+| Parâmetro | Localização | Descrição |
+|-----------|-------------|-----------|
+| `ambiente` | query | `homologacao` (default) ou `producao` |
+| `client_id` | body (POST /auth) | Client ID ACBr |
+| `client_secret` | body (POST /auth) | Client Secret ACBr |
 
 ```json
-// POST /api/acbr/auth
+POST /api/acbr/auth
+
+// Request
 { "client_id": "...", "client_secret": "..." }
-// 200
+
+// Response 200
 { "access_token": "jwt...", "expires_in": 3600 }
 
-// POST /api/acbr/nfse/dps?ambiente=homologacao
+// Response 400
+{ "message": "client_id e client_secret são obrigatórios" }
+
+// Response 502
+{ "message": "Falha na autenticação ACBr: <detalhes>" }
+```
+
+```json
+POST /api/acbr/nfse/dps?ambiente=homologacao
 Authorization: Bearer <token>
+
+// Request
 { "provedor": "nacional", "ambiente": "homologacao", "infDPS": { ... } }
+
+// Response 200
+{ "id": "...", "status": "autorizado", "numero": "12345", ... }
+
+// Response 401
+{ "message": "Token de acesso não fornecido" }
+
+// Response 502
+{ "message": "<mensagem de erro da ACBr>" }
 ```
 
 ---
@@ -193,8 +444,23 @@ Authorization: Bearer <token>
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `POST` | `/api/acbr-tests/run` | Executa suite de testes ACBr, retorna JSON + HTML |
-| `GET` | `/api/acbr-tests/report` | Executa suite e retorna página HTML |
+| `POST` | `/api/acbr-tests/run` | Executa suite de testes ACBr |
+
+```json
+POST /api/acbr-tests/run
+
+// Response 200
+{
+    "success": true,
+    "timestamp": "2026-07-29T12:00:00.000Z",
+    "summary": { "total": 12, "passed": 10, "failed": 2, "suites": [ ... ], "durationMs": 4582 },
+    "steps": [ { "suite": "...", "name": "...", "method": "POST", "url": "...", "status": "ok", "durationMs": 1234, "responseData": { ... } } ],
+    "reportHtml": "<html>..."
+}
+
+// Response 500
+{ "success": false, "error": "Erro ao executar testes ACBr", "details": "..." }
+```
 
 ---
 
@@ -202,10 +468,32 @@ Authorization: Bearer <token>
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `POST` | `/api/tests/run-all` | Executa Jest no serverless, salva relatório |
-| `GET` | `/api/tests` | Lista relatórios salvos (query: `page`, `pageSize`) |
+| `POST` | `/api/tests/run-all` | Executa Jest no serverless |
+| `GET` | `/api/tests` | Lista relatórios salvos (paginado) |
 | `GET` | `/api/tests/:id` | Detalhes de um relatório |
-| `GET` | `/api/tests/:id/html` | Visualiza HTML do relatório no navegador |
+| `GET` | `/api/tests/:id/html` | HTML do relatório no navegador |
+
+```json
+GET /api/tests?page=1&pageSize=10
+
+// Response 200
+{
+    "hasNext": false,
+    "items": [
+        { "id": 1, "date": "25/07/2026", "time": "20:30:00", "createdAt": "2026-07-25T23:30:00.000Z", "updatedAt": "2026-07-25T23:30:00.000Z" }
+    ]
+}
+```
+
+```json
+POST /api/tests/run-all
+
+// Response 200
+{ "success": true, "message": "Testes executados com sucesso", "testId": 1, "storageUrl": null }
+
+// Response 500
+{ "success": false, "error": "Erro ao executar testes", "details": "..." }
+```
 
 ---
 
@@ -216,14 +504,24 @@ Authorization: Bearer <token>
 | `GET` | `/` | Informações da API |
 | `GET` | `/health` | Health check |
 | `GET` | `/docs` | Swagger UI |
-| `GET` | `/tests` | Último relatório de testes (HTML) |
-| `GET` | `/tests/pdf` | Último relatório em PDF |
+| `GET` | `/tests` | Último relatório (HTML) |
+| `GET` | `/tests/pdf` | Último relatório (PDF) |
 | `GET` | `/coverage` | Redireciona para `/tests` |
-| `GET` | `/coverage-static/*` | Arquivos estáticos do LCOV |
+| `GET` | `/coverage-static/*` | Arquivos LCOV |
 
----
+```json
+GET /health
 
-## Configuração e Instalação
+// Response 200
+{ "status": "ok", "message": "Backend is running" }
+```
+
+```json
+GET /
+
+// Response 200
+{ "message": "Finance Pro API", "docs": "/docs", "coverage": "/coverage", "tests": "/tests", "health": "/health" }
+```
 
 ```bash
 git clone https://github.com/mobilecosta/finance-backend.git
