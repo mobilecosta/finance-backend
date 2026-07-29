@@ -278,37 +278,29 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
     infDPS: {
       tpAmb: 2,
       dhEmi: new Date().toISOString(),
-      verAplic: '1.01',
-      nDPS: String(Math.floor(Math.random() * 1000000)),
       dCompet: new Date().toISOString().split('T')[0],
-      tpEmit: 1,
-      cLocEmi: '3543303',
-      xLocEmi: 'Ribeirão Pires',
       prest: {
         CNPJ: CNPJ,
-        im: '123456',
-        razaoSocial: 'EMPRESA EXEMPLO LTDA',
-        email: 'fiscal@empresa.com.br',
         regTrib: {
-          opSimpNac: 1,
           regEspTrib: 0
         }
       },
       toma: {
-        cpf: '12345678909',
-        xNome: 'João da Silva',
-        email: 'joao@email.com'
+        CPF: '12345678909',
+        xNome: 'João da Silva'
       },
       serv: {
-        cLocPrestacao: '3543303',
-        cTribNac: '010700',
-        cNBS: '101010000',
-        xDescServ: 'Desenvolvimento de software sob encomenda'
+        locPrest: { cLocPrestacao: '3543303' },
+        cServ: {
+          cTribNac: '010700',
+          cNBS: '101010000',
+          xDescServ: 'Desenvolvimento de software sob encomenda'
+        }
       },
       valores: {
         vServPrest: { vServ: 1500.00 },
         trib: {
-          tribMun: { tribISSQN: 1, aliq: 2.00, vISSQN: 30.00, tpRetISS: 1 },
+          tribMun: { tribISSQN: 1, pAliq: 2.00, vISSQN: 30.00 },
           totTrib: { indTotTrib: 0 }
         }
       }

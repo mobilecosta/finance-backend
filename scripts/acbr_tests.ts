@@ -194,10 +194,13 @@ async function run() {
     infDPS: {
       tpAmb: 2, dhEmi: new Date().toISOString(),
       dCompet: new Date(Date.now() - 86400000).toISOString().split('T')[0],
-      prest: { CNPJ: CNPJ, im: '123456', razaoSocial: 'EMPRESA TESTE LTDA' },
+      prest: { CNPJ: CNPJ },
       toma: { CNPJ: '00000000000191', xNome: 'CLIENTE TESTE' },
-      serv: { cLocPrestacao: '3543303', cTribNac: '010700', cNBS: '101010000', xDescServ: 'SERVICO DE TESTE API ACBR' },
-      valores: { vServPrest: { vServ: 10.00 }, trib: { tribMun: { tribISSQN: 1, aliq: 2.00, vISSQN: 0.20 }, totTrib: { indTotTrib: 0 } } }
+      serv: {
+        locPrest: { cLocPrestacao: '3543303' },
+        cServ: { cTribNac: '010700', cNBS: '101010000', xDescServ: 'SERVICO DE TESTE API ACBR' }
+      },
+      valores: { vServPrest: { vServ: 10.00 }, trib: { tribMun: { tribISSQN: 1, pAliq: 2.00, vISSQN: 0.20 }, totTrib: { indTotTrib: 0 } } }
     }
   };
   t = performance.now();
