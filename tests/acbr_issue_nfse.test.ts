@@ -24,32 +24,19 @@ describe(\'ACBr Issue NFS-e Tests\', () => {
         dhEmi: new Date().toISOString(),
         dCompet: new Date(Date.now() - 86400000).toISOString().split('T')[0],
         prest: {
-          CNPJ: cnpj
+          CNPJ: cnpj,
+          im: '123456',
+          razaoSocial: 'EMPRESA TESTE LTDA'
         },
         toma: {
           CNPJ: '00000000000191',
           xNome: 'CLIENTE TESTE'
         },
         serv: {
-          cServ: {
-            cTribNac: '010701',
-            cNBS: '101010000',
-            xDescServ: 'SERVICO DE TESTE API ACBR'
-          }
-        },
-        IBSCBS: {
-          finNFSe: 0,
-          indFinal: 0,
-          cIndOp: '000000',
-          indDest: 0,
-          valores: {
-            trib: {
-              gIBSCBS: {
-                CST: '100',
-                cClassTrib: '100000'
-              }
-            }
-          }
+          cLocPrestacao: '3543303',
+          cTribNac: '010700',
+          cNBS: '101010000',
+          xDescServ: 'SERVICO DE TESTE API ACBR'
         },
         valores: {
           vServPrest: {
@@ -57,7 +44,9 @@ describe(\'ACBr Issue NFS-e Tests\', () => {
           },
           trib: {
             tribMun: {
-              tribISSQN: 1
+              tribISSQN: 1,
+              aliq: 2.00,
+              vISSQN: 0.20
             },
             totTrib: {
               indTotTrib: 0

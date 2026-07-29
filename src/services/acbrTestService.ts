@@ -301,11 +301,9 @@ export async function runAcbrTests(): Promise<AcbrTestResult> {
       },
       serv: {
         cLocPrestacao: '3543303',
-        cServ: {
-          cTribNac: '010700',
-          cNBS: '101010000',
-          xDescServ: 'Desenvolvimento de software sob encomenda'
-        }
+        cTribNac: '010700',
+        cNBS: '101010000',
+        xDescServ: 'Desenvolvimento de software sob encomenda'
       },
       valores: {
         vServPrest: { vServ: 1500.00 },
