@@ -1,25 +1,52 @@
 # Finance Pro - Backend API
 
-Esta é a API de back-end para o sistema **Finance Pro**, um gerenciador de finanças pessoais. A API foi construída com **Node.js**, **Express 5**, **TypeScript** e **Prisma ORM**, utilizando **Supabase Auth** para autenticação e **PostgreSQL** (Supabase) como banco de dados.
+API de back-end para o sistema **Finance Pro**, um gerenciador de finanças pessoais com integração NFS-e via ACBr API.
 
-## Tecnologias Utilizadas
+Construída com **Node.js**, **Express 5**, **TypeScript**, **Prisma ORM 6**, **Supabase Auth** e **PostgreSQL**.
 
-- **Node.js 22**
-- **Express 5**
-- **TypeScript**
-- **Prisma ORM 6**
-- **Supabase Auth** (Autenticação JWT)
-- **PostgreSQL** (Hospedado no Supabase)
-- **Jest & Supertest** (Testes de Integração)
-- **Supabase Storage** (Relatórios de cobertura)
+## Stack
+
+| Camada | Tecnologia |
+|--------|-----------|
+| Runtime | Node.js 22 |
+| Framework | Express 5 |
+| Linguagem | TypeScript 5 |
+| ORM | Prisma 6 |
+| Autenticação | Supabase Auth (JWT) |
+| Banco | PostgreSQL (Supabase) |
+| Proxy NFS-e | ACBr API |
+| Testes | Jest + Supertest |
+| Relatórios | jest-html-reporters, Istanbul |
+
+---
+
+## Sumário
+
+- [Autenticação](#autenticacao)
+- [API Endpoints](#api-endpoints)
+  - [Auth](#apiauth)
+  - [Financeiro](#apifinance)
+  - [ACBr Proxy](#apiacbr)
+  - [ACBr Tests](#apiacbr-tests)
+  - [Jest Runner](#apitests)
+  - [Utilitários](#utilitarios)
+- [Configuração e Instalação](#configuracao-e-instalacao)
+- [Deploy na Vercel](#deploy-na-vercel)
+- [Testes](#testes)
+- [Scripts](#scripts)
+- [Integração NFS-e (ACBr)](#integracao-nfs-e-acbr)
+  - [Arquitetura Proxy](#arquitetura-proxy)
+  - [Autenticação OAuth2](#autenticacao-oauth2)
+  - [Payload DPS (Schema Oficial)](#payload-dps-schema-oficial)
+  - [Empresa de Teste](#empresa-de-teste)
+  - [Bloqueios Conhecidos](#bloqueios-conhecidos)
 
 ---
 
 ## Autenticação
 
-A API utiliza o **Supabase Auth**. Todas as rotas de finanças requerem um token JWT válido enviado no cabeçalho `Authorization`.
+A API usa **Supabase Auth** com JWT Bearer. Rotas de finanças exigem token válido no header:
 
-**Formato:**
 ```
 Authorization: Bearer <seu_token_jwt>
 ```
@@ -28,69 +55,65 @@ Authorization: Bearer <seu_token_jwt>
 
 ## API Endpoints
 
-### Autenticação (`/api/auth`)
+### `/api/auth`
 
-| Método | Endpoint | Autenticação | Descrição |
-|--------|----------|-------------|-----------|
-| `POST` | `/api/auth/signup` | Não | Cria um novo usuário |
-| `POST` | `/api/auth/signin` | Não | Autentica e retorna token JWT |
-| `GET` | `/api/auth/callback` | Não | Callback para confirmação de email (query: `code`, `next`) |
-| `POST` | `/api/auth/signout` | Sim | Encerra a sessão |
-| `GET` | `/api/auth/user` | Sim | Retorna dados do usuário logado |
+| Método | Endpoint | Auth | Descrição |
+|--------|----------|------|-----------|
+| `POST` | `/api/auth/signup` | Não | Cria usuário |
+| `POST` | `/api/auth/signin` | Não | Login email/senha |
+| `GET` | `/api/auth/callback` | Não | Callback OAuth (query: `code`, `next`) |
+| `POST` | `/api/auth/signout` | Sim | Logout |
+| `GET` | `/api/auth/user` | Sim | Dados do usuário logado |
 
 **signup**
 ```json
-// Request
+// POST /api/auth/signup
 { "email": "user@email.com", "password": "123456", "fullName": "Nome" }
-// Response 201
-{ "token": "jwt...", "user": { "id": "uuid", "email": "user@email.com", "name": "Nome", "createdAt": "2026-01-01T00:00:00.000Z" } }
+// 201
+{ "token": "jwt...", "user": { "id": "uuid", "email": "...", "name": "...", "createdAt": "..." } }
 ```
 
 **signin**
 ```json
-// Request
+// POST /api/auth/signin
 { "email": "user@email.com", "password": "123456" }
-// Response 200
-{ "token": "jwt...", "user": { "id": "uuid", "email": "user@email.com", "name": "Nome", "createdAt": "2026-01-01T00:00:00.000Z" } }
+// 200
+{ "token": "jwt...", "user": { "id": "uuid", "email": "...", "name": "...", "createdAt": "..." } }
 ```
 
-**callback**
-```
-GET /api/auth/callback?code=<supabase_code>&next=/dashboard
-// Response: redirect com token na URL ou JSON { token, user }
-```
+**callback** `GET /api/auth/callback?code=<code>&next=/dashboard`
 
-**user** (Requer Token)
+Redireciona com `?token=` (Accept: text/html) ou JSON.
+
+**user**
 ```
 GET /api/auth/user
-// Response 200: { "id": "uuid", "email": "user@email.com", "name": "Nome", "createdAt": "..." }
+Authorization: Bearer <token>
+// 200
+{ "id": "uuid", "email": "...", "name": "...", "createdAt": "..." }
 ```
 
 ---
 
-### Financeiro (`/api/finance`)
-*Todas as rotas abaixo requerem autenticação.*
+### `/api/finance`
+
+Todas as rotas exigem `Authorization: Bearer <token>` (authMiddleware aplicado globalmente).
 
 #### Dashboard
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `GET` | `/api/finance/dashboard/metrics` | Retorna métricas do dashboard |
+| `GET` | `/api/finance/dashboard/metrics` | Métricas: saldo total, receitas/despesas, mensal, categorias |
 
 ```json
-// Response 200
+// 200
 {
   "totalBalance": 5000.00,
   "totalIncome": 10000.00,
   "totalExpense": 5000.00,
-  "transactionCount": 42,
-  "monthlyData": [
-    { "month": "2026-07", "income": 3000, "expense": 1500 }
-  ],
-  "categoryDistribution": [
-    { "category": "Alimentação", "amount": 1200, "percentage": 24 }
-  ],
-  "recentTransactions": [ /* últimas 5 transações */ ]
+  "monthlyData": [{ "month": "2026-07", "income": 3000, "expense": 1500 }],
+  "categoryDistribution": [{ "category": "Alimentação", "amount": 1200, "percentage": 24 }],
+  "recentTransactions": []
 }
 ```
 
@@ -98,57 +121,91 @@ GET /api/auth/user
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `GET` | `/api/finance/accounts` | Lista todas as contas |
-| `GET` | `/api/finance/accounts/:id` | Retorna uma conta |
-| `POST` | `/api/finance/accounts` | Cria uma nova conta |
-| `PUT` | `/api/finance/accounts/:id` | Atualiza uma conta |
-| `DELETE` | `/api/finance/accounts/:id` | Remove uma conta |
+| `GET` | `/api/finance/accounts` | Lista contas |
+| `GET` | `/api/finance/accounts/:id` | Conta por ID |
+| `POST` | `/api/finance/accounts` | Criar conta |
+| `PUT` | `/api/finance/accounts/:id` | Atualizar conta |
+| `DELETE` | `/api/finance/accounts/:id` | Remover conta |
 
 ```json
-// POST/PUT Request
+// POST/PUT
 { "name": "Conta Corrente", "type": "checking", "balance": 1000, "color": "#3b82f6", "icon": "wallet.pass" }
-
 // Response
-{ "id": 1, "tenantId": 1, "userId": "uuid", "name": "Conta Corrente", "type": "checking", "balance": "1000.00", "color": "#3b82f6", "icon": "wallet.pass", "isActive": true, "createdAt": "...", "updatedAt": "..." }
+{ "id": 1, "tenantId": 1, "userId": "uuid", "name": "Conta Corrente", "type": "checking", "balance": "1000.00", "isActive": true, "createdAt": "...", "updatedAt": "..." }
 ```
 
 #### Categorias
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `GET` | `/api/finance/categories` | Lista todas as categorias |
-| `GET` | `/api/finance/categories/:id` | Retorna uma categoria |
-| `POST` | `/api/finance/categories` | Cria uma nova categoria |
-| `PUT` | `/api/finance/categories/:id` | Atualiza uma categoria |
-| `DELETE` | `/api/finance/categories/:id` | Remove uma categoria |
+| `GET` | `/api/finance/categories` | Lista categorias |
+| `GET` | `/api/finance/categories/:id` | Categoria por ID |
+| `POST` | `/api/finance/categories` | Criar categoria |
+| `PUT` | `/api/finance/categories/:id` | Atualizar categoria |
+| `DELETE` | `/api/finance/categories/:id` | Remover categoria |
 
 ```json
-// POST/PUT Request
+// POST/PUT
 { "name": "Alimentação", "type": "expense", "color": "#10b981", "icon": "tag.fill" }
-
-// Response
-{ "id": 1, "tenantId": 1, "userId": "uuid", "name": "Alimentação", "type": "expense", "color": "#10b981", "icon": "tag.fill", "isActive": true, "createdAt": "...", "updatedAt": "..." }
 ```
 
 #### Transações
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `GET` | `/api/finance/transactions` | Lista transações do usuário |
-| `POST` | `/api/finance/transactions` | Cria uma transação (atualiza saldo da conta) |
-| `PUT` | `/api/finance/transactions/:id` | Atualiza uma transação (ajusta saldo da conta) |
-| `DELETE` | `/api/finance/transactions/:id` | Remove uma transação (reverte saldo da conta) |
+| `GET` | `/api/finance/transactions` | Lista transações (suporte `page`, `pageSize`) |
+| `POST` | `/api/finance/transactions` | Criar transação (atualiza saldo) |
+| `PUT` | `/api/finance/transactions/:id` | Atualizar transação (recalcula saldo) |
+| `DELETE` | `/api/finance/transactions/:id` | Remover transação (reverte saldo) |
 
 ```json
-// POST Request
+// POST
 { "accountId": 1, "categoryId": 1, "type": "expense", "amount": 150.00, "description": "Mercado", "date": "2026-07-19", "status": "completed" }
-
-// PUT Request (mesmo body, todos opcionais)
-{ "amount": 200.00, "description": "Atualizado" }
-
-// GET Response (array)
-[{ "id": 1, "tenantId": 1, "userId": "uuid", "accountId": 1, "categoryId": 1, "type": "expense", "amount": "150.00", "description": "Mercado", "date": "2026-07-19", "status": "completed", "paymentMethod": null, "createdAt": "...", "updatedAt": "...", "category": { ... }, "account": { ... } }]
 ```
+
+---
+
+### `/api/acbr`
+
+Proxy genérico para a API ACBr. Qualquer path após `/api/acbr` é encaminhado para a ACBr.
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/api/acbr/auth` | Autentica na ACBr (`client_id` + `client_secret`) |
+| `*` | `/api/acbr/*` | Proxy: encaminha method + path + body + query para ACBr |
+
+Query `?ambiente=homologacao` (default) ou `?ambiente=producao` define o ambiente.
+
+```json
+// POST /api/acbr/auth
+{ "client_id": "...", "client_secret": "..." }
+// 200
+{ "access_token": "jwt...", "expires_in": 3600 }
+
+// POST /api/acbr/nfse/dps?ambiente=homologacao
+Authorization: Bearer <token>
+{ "provedor": "nacional", "ambiente": "homologacao", "infDPS": { ... } }
+```
+
+---
+
+### `/api/acbr-tests`
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/api/acbr-tests/run` | Executa suite de testes ACBr, retorna JSON + HTML |
+| `GET` | `/api/acbr-tests/report` | Executa suite e retorna página HTML |
+
+---
+
+### `/api/tests`
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/api/tests/run-all` | Executa Jest no serverless, salva relatório |
+| `GET` | `/api/tests` | Lista relatórios salvos (query: `page`, `pageSize`) |
+| `GET` | `/api/tests/:id` | Detalhes de um relatório |
+| `GET` | `/api/tests/:id/html` | Visualiza HTML do relatório no navegador |
 
 ---
 
@@ -158,42 +215,23 @@ GET /api/auth/user
 |--------|----------|-----------|
 | `GET` | `/` | Informações da API |
 | `GET` | `/health` | Health check |
-| `GET` | `/docs` | Documentação Swagger |
-| `GET` | `/tests` | Relatório de testes (HTML) |
-| `GET` | `/tests/pdf` | Relatório de testes (PDF) |
-| `GET` | `/coverage` | Relatório de cobertura (HTML) |
-| `POST` | `/coverage` | Salva relatório de cobertura no banco |
-
-```json
-// GET /
-{ "message": "Finance Pro API", "docs": "/docs", "coverage": "/coverage", "tests": "/tests", "health": "/health" }
-
-// GET /health
-{ "status": "ok", "message": "Backend is running" }
-
-// POST /coverage
-{ "reportHtml": "<html>...</html>", "reportPdf": "base64..." }
-// Response 201
-{ "message": "Relatório salvo com sucesso", "id": 1 }
-```
+| `GET` | `/docs` | Swagger UI |
+| `GET` | `/tests` | Último relatório de testes (HTML) |
+| `GET` | `/tests/pdf` | Último relatório em PDF |
+| `GET` | `/coverage` | Redireciona para `/tests` |
+| `GET` | `/coverage-static/*` | Arquivos estáticos do LCOV |
 
 ---
 
 ## Configuração e Instalação
 
-### 1. Clonar
 ```bash
 git clone https://github.com/mobilecosta/finance-backend.git
 cd finance-backend
-```
-
-### 2. Instalar dependências
-```bash
 pnpm install
 ```
 
-### 3. Variáveis de Ambiente
-Crie um arquivo `.env` na raiz:
+**.env**
 ```env
 DATABASE_URL="postgresql://user:pass@host:5432/postgres?pgbouncer=true"
 SUPABASE_URL="https://seu-projeto.supabase.co"
@@ -203,7 +241,6 @@ PORT=3000
 NODE_ENV=development
 ```
 
-### 4. Banco de Dados
 ```bash
 npx prisma generate
 npx prisma db push
@@ -213,11 +250,13 @@ npx prisma db push
 
 ## Deploy na Vercel
 
-O projeto está configurado para deploy na Vercel via `vercel.json`. Configure as variáveis de ambiente no painel da Vercel e faça deploy com:
+Configurado via `vercel.json`. Variáveis de ambiente no painel Vercel:
 
 ```bash
-pnpm deploy
+pnpm deploy    # vercel --prod
 ```
+
+Build pipeline: `prisma generate && tsc && npx jest --coverage --no-cache && tsx scripts/saveCoverageReport.ts`
 
 ---
 
@@ -227,156 +266,33 @@ pnpm deploy
 
 | Ferramenta | Versão | Função |
 |------------|--------|--------|
-| **Jest** | ^30.4.2 | Runner de testes |
-| **ts-jest** | ^29.4.11 | Transformer TypeScript → JS (ESM) |
-| **Supertest** | ^7.2.2 | Testes HTTP |
-| **jest-html-reporters** | ^3.1.7 | Relatório HTML |
-| **jest-environment-node** | ^30.x | Ambiente Node para Jest |
+| Jest | ^30.4.2 | Runner |
+| ts-jest | ^29.4.11 | Transformer TS → JS (ESM) |
+| Supertest | ^7.2.2 | Testes HTTP |
+| jest-html-reporters | ^3.1.7 | Relatório HTML |
 
 ### Estrutura
 
 ```
 tests/
-├── acbr_manual.test.ts         # Teste manual da API ACBr (proxy)
-├── acbr_real.test.ts           # Testes reais contra endpoints ACBr
-├── acbr_integration.test.ts    # Testes de integração com ACBr
-├── acbr_create_company.test.ts # Criação de empresa no ACBr
-├── acbr_configure_nfse.test.ts # Configuração de empresa + NFS-e
-├── acbr_issue_nfse.test.ts     # Emissão de DPS + consulta NFS-e
-├── finance.test.ts             # Health check e endpoints básicos
-└── coverage.test.ts            # Rotas de relatório de cobertura
+├── acbr_issue_nfse.test.ts   # Emissão DPS + consulta NFS-e
+├── finance.test.ts           # Health check e endpoints básicos
+└── coverage.test.ts          # Rotas de relatório de cobertura
 ```
-
-### Resultado Atual
-
-```
-Test Suites: 8 passed, 8 total
-Tests:       22 passed, 22 total
-```
-
-Todas as **8 suítes passam** com `DATABASE_URL` configurada (local ou produção).
-
-Sem `DATABASE_URL`:
-```
-Test Suites: 7 passed, 1 failed, 8 total
-Tests:       18 passed, 4 failed, 22 total
-```
-- **7 suítes passam** (ACBr + Finance)
-- **1 suíte falha** (`coverage.test.ts`) — requer `DATABASE_URL` (tabela `tests` no banco).
 
 ### Execução
 
 ```bash
-# Local (com NODE_OPTIONS para ESM)
-pnpm test
-
-# Com relatório HTML e cobertura
-pnpm test:coverage
-
-# Apenas suítes ACBr
-NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules npx jest --testPathPatterns="acbr"
-```
-
-### Configuração do Jest
-
-Arquivo: `jest.config.js` (ESM, type: module)
-
-```js
-export default {
-  preset: 'ts-jest/presets/default-esm',
-  testEnvironment: 'node',
-  moduleNameMapper: { '^(\\.{1,2}/.*)\\.js$': '$1' },
-  transform: { '^.+\\.tsx?$': ['ts-jest', { useESM: true }] },
-  collectCoverage: true,
-  coverageDirectory: 'coverage',
-  reporters: ['default', ['jest-html-reporters', { publicPath: './coverage', filename: 'report.html' }]],
-};
-```
-
-> **Nota:** O preset `ts-jest/presets/default-esm` resolve para o arquivo `jest-preset.js` dentro do diretório `node_modules/ts-jest/presets/default-esm/`. Jest automaticamente anexa `/jest-preset` ao nome do preset quando não é um caminho absoluto.
-
-### API de Testes
-
-O módulo de testes expõe estas rotas em `/api/tests`:
-
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| `POST` | `/api/tests/run-all` | Executa todos os testes via Jest no serverless e salva relatório HTML |
-| `GET` | `/api/tests` | Lista paginada de relatórios salvos |
-| `GET` | `/api/tests/:id` | Detalhes de um relatório específico (HTML inline) |
-| `GET` | `/api/tests/:id/html` | Visualização direta do HTML do relatório no navegador |
-
-**Parâmetros de paginação** (`GET /api/tests`):
-| Query | Tipo | Default | Descrição |
-|-------|------|---------|-----------|
-| `page` | number | 1 | Número da página |
-| `pageSize` | number | 20 | Itens por página |
-
-**Rotas legadas** (compatibilidade):
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| `GET` | `/tests` | Último relatório de testes salvo (HTML) |
-| `GET` | `/tests/pdf` | Último relatório de testes em PDF |
-| `GET` | `/coverage` | Redireciona para `/tests` |
-| `GET` | `/coverage-static` | Serve arquivos estáticos do relatório LCOV |
-
-Response `GET /api/tests`:
-```json
-{
-  "items": [
-    {
-      "id": 1,
-      "date": "25/07/2026",
-      "time": "20:30:00",
-      "createdAt": "2026-07-25T23:30:00.000Z",
-      "updatedAt": "2026-07-25T23:30:00.000Z"
-    }
-  ],
-  "hasNext": false
-}
-```
-
-### Execução em Serverless (Vercel)
-
-O endpoint `POST /api/tests/run-all` executa Jest dentro do ambiente serverless Vercel com as seguintes particularidades:
-
-1. **Config temporária:** Gera `jest.config.cjs` em `/tmp/` com caminhos absolutos para evitar dependência de resolução de módulo relativa.
-2. **Filesystem read-only:** O diretório `/var/task` (cwd) é somente leitura. Output de cobertura vai para `/tmp/coverage`.
-3. **HOME=/tmp:** Necessário para npm cache em ambiente serverless.
-4. **NODE_PATH setado:** `NODE_PATH=/var/task/node_modules` para que o `require()` de módulos como `jest-environment-node` funcione mesmo quando a config está em `/tmp/`.
-5. **Preset absoluto:** O preset `ts-jest/presets/default-esm/jest-preset.js` é passado como caminho absoluto para evitar erro `"not found relative to rootDir"`.
-
-```typescript
-// Lógica central (TestController.runAllTests)
-const tmpConfig = '/tmp/jest.config.cjs';
-const presetFile = '/var/task/node_modules/ts-jest/presets/default-esm/jest-preset.js';
-
-execSync(
-  `node --experimental-vm-modules "${jestBin}" --config "${tmpConfig}" --rootDir "${cwd}" --no-cache`,
-  { cwd, env: { ...process.env, NODE_PATH: path.resolve(cwd, 'node_modules'), HOME: '/tmp', NODE_ENV: 'test' } }
-);
+pnpm test              # Local (com NODE_OPTIONS para ESM)
+pnpm test:coverage     # Com relatório HTML e cobertura
 ```
 
 ### Pipeline de Build
 
-O `vercel-build` executa todos os testes com cobertura em duas etapas:
+O `vercel-build` executa todas as 8 suítes com `--coverage` em duas etapas:
 
-```
-prisma generate && tsc && npx jest --coverage --no-cache && tsx scripts/saveCoverageReport.ts
-```
-
-1. **Jest** executa todas as 8 suítes com `--coverage`.
-2. `coverage/report.html` (jest-html-reporters) e `coverage/lcov-report/index.html` (Istanbul HTML) são gerados.
-3. `scripts/saveCoverageReport.ts` salva o melhor HTML disponível (Istanbul → jest-html-reporters) na tabela `tests` e no Storage Supabase (`coverage-reports/latest.html`).
-
-**Relatórios gerados em `coverage/`:**
-
-| Arquivo | Conteúdo |
-|---------|----------|
-| `report.html` | Detalhes dos testes (jest-html-reporters) |
-| `lcov-report/index.html` | Cobertura de código (Istanbul) |
-| `lcov.info` | Dados LCOV |
-| `coverage-summary.json` | Resumo em JSON |
+1. Jest gera `coverage/report.html` (jest-html-reporters) + `coverage/lcov-report/index.html` (Istanbul)
+2. `scripts/saveCoverageReport.ts` salva o melhor HTML na tabela `tests` e no Storage Supabase
 
 ---
 
@@ -384,78 +300,152 @@ prisma generate && tsc && npx jest --coverage --no-cache && tsx scripts/saveCove
 
 | Comando | Descrição |
 |---------|-----------|
-| `pnpm dev` | Inicia servidor em modo dev |
+| `pnpm dev` | Inicia servidor em modo dev (tsx watch) |
 | `pnpm build` | Compila TypeScript |
 | `pnpm start` | Inicia servidor em produção |
 | `pnpm test` | Executa todos os testes |
-| `pnpm test:coverage` | Executa todos os testes com cobertura e salva relatório |
-| `pnpm deploy` | Faz deploy na Vercel |
+| `pnpm test:coverage` | Testes com cobertura + salva relatório |
+| `pnpm deploy` | Deploy na Vercel |
 
 ---
 
 ## Integração NFS-e (ACBr)
 
-Integração com a API **ACBr** ([docs.opencode.ai/acbr](https://docs.opencode.ai/acbr)) para emissão de Nota Fiscal de Serviço eletrônica (NFS-e) via DPS.
+Proxy para a [API ACBr](https://dev.acbr.api.br) para emissão de NFS-e via DPS (Documento de Prestação de Serviços).
 
-### Provedor
+### Arquitetura Proxy
 
-| Provedor | Status | Observação |
-|----------|--------|------------|
-| `ISSSaoPaulo` (padrao) | ❌ Bloqueado | Provedor local SP — não possui URL de homologação no ACBr |
-| `nacional` (ADN) | ⚠️ Homologação | Sistema Nacional (gov.br/nfse) — DPS processada, retorno `E0120` |
+```
+Cliente → POST /api/acbr/nfse/dps → Backend → POST https://hom.acbr.api.br/nfse/dps → ACBr API
+         ← JSON response              ← JSON response              ← JSON response
+```
 
-### Payload DPS (`InfDPS`)
+O backend apenas autentica e encaminha a requisição — **sem transformação de payload**. O contrato é o schema oficial da ACBr.
+
+### Autenticação OAuth2
+
+```mermaid
+sequenceDiagram
+    Client->>Backend: POST /api/acbr/auth {client_id, client_secret}
+    Backend->>ACBr Auth: POST /realms/ACBrAPI/protocol/openid-connect/token
+    ACBr Auth-->>Backend: {access_token, expires_in}
+    Backend-->>Client: {access_token, expires_in}
+    Client->>Backend: POST /api/acbr/nfse/dps (Authorization: Bearer <token>)
+    Backend->>ACBr API: POST /nfse/dps (Authorization: Bearer <token>)
+    ACBr API-->>Backend: NFS-e response
+    Backend-->>Client: NFS-e response
+```
+
+**Credenciais de teste:**
+- `clientId`: `1l7JPNYuvVqpJUtGW1Zi`
+- `clientSecret`: `bINzBI5iyXU3kYu0BdhWY2wrDEkJQUCJ`
+- `cnpj`: `66549275000197` (EMPRESA TESTE MANUS — Ribeirão Pires/SP)
+- Scope: `empresa nfse`
+
+### Payload DPS (Schema Oficial)
+
+Baseado no schema `NfseDpsPedidoEmissao` da [OpenAPI ACBr](https://prod.acbr.api.br/openapi/swagger.json).
+
+**Endpoint:** `POST /nfse/dps`
 
 ```json
 {
-  "serv": {
-    "cServ": {
-      "cTribNac": "010701",
-      "cNBS": "101010000",
-      "xDescServ": "Serviço de desenvolvimento de sistemas",
-      "IBSCBS": {
-        "CST": "100",
-        "cClassTrib": "100000",
-        "indTotTrib": 0
+  "provedor": "nacional",
+  "ambiente": "homologacao",
+  "referencia": "MEU-ID-UNICO-123",
+  "infDPS": {
+    "dhEmi": "2026-07-29T12:00:00.000Z",
+    "dCompet": "2026-07-29",
+    "prest": {
+      "CNPJ": "66549275000197"
+    },
+    "toma": {
+      "CNPJ": "00000000000191",
+      "xNome": "CLIENTE TESTE"
+    },
+    "serv": {
+      "locPrest": {
+        "cLocPrestacao": "3543303"
+      },
+      "cServ": {
+        "cTribNac": "010700",
+        "cNBS": "101010000",
+        "xDescServ": "DESCRICAO DO SERVICO"
+      }
+    },
+    "valores": {
+      "vServPrest": {
+        "vServ": 10.00
+      },
+      "trib": {
+        "tribMun": {
+          "tribISSQN": 1,
+          "pAliq": 2.00,
+          "vISSQN": 0.20
+        },
+        "totTrib": {
+          "indTotTrib": 0
+        }
       }
     }
-  },
-  "valores": {
-    "vServ": 1.00,
-    "vDescIncond": 0.00,
-    "vDescCond": 0.00,
-    "vDeducao": 0.00,
-    "vIss": 0.05,
-    "vAliq": 0.05,
-    "trib": {
-      "totTrib": 0.00,
-      "indTotTrib": 0
-    }
-  },
-  "prest": { "CNPJ": "66549275000197", "xNome": "Finance Pro Teste Ltda" },
-  "tom": { "CNPJ": "00000000000191", "xNome": "Tomador Teste Ltda" },
-  "comp": { "cMun": 3543303 }
+  }
 }
 ```
 
-### Empresa e Configuração NFS-e
+**Campos obrigatórios do `InfDPS`** (por schema):
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `dhEmi` | string (date-time) | Data/hora emissão (UTC) |
+| `prest` | object | Prestador (`CNPJ` ou `CPF`) |
+| `serv` | object | Serviço (`cServ` com `cTribNac`, `xDescServ`) |
+| `valores` | object | Valores (`vServPrest.vServ` + `trib.tribMun`) |
+| `valores.trib.tribMun.tribISSQN` | integer | 1=Tributável, 2=Imunidade, 3=Exportação, 4=Não Incidência |
 
-- **CNPJ:** `66549275000197`
-- **Inscrição Municipal:** `123456`
-- **IBGE:** `3543303`
-- **RPS:** `lote: 1`, `serie: "001"`, `numero: 1`
-- **Ambiente:** homologação (`2`)
+**Campos opcionais do `InfDPS`**:
+`tpAmb`, `verAplic`, `dCompet`, `cMotivoEmisTI`, `chNFSeRej`, `subst`, `toma`, `interm`, `IBSCBS`
 
-### Bloqueios Conhecidos
+**Provedores suportados:**
+| Provedor | Enum | Descrição |
+|----------|------|-----------|
+| Padrão | `padrao` | Provedor padrão da prefeitura |
+| Nacional | `nacional` | ADN — Sistema Nacional NFS-e (gov.br/nfse) |
 
-1. **Provedor `ISSSaoPaulo`:** Retorna `"URL de Homologação não informada"` — provedor local SP sem suporte a homologação no ACBr.
-2. **Provedor `nacional`:** DPS processada mas retorna `E0120` — `"IM do prestador não deve ser informado, pois não existem informações complementares registradas no CNC NFS-e do município emissor"`. A empresa precisa ser registrada manualmente em [gov.br/nfse](https://www.gov.br/nfse).
+### Empresa de Teste
 
-### Setup das Variáveis de Ambiente
+**CNPJ:** `66549275000197`
+**Município:** Ribeirão Pires/SP (IBGE `3543303`)
+**Inscrição Municipal:** `123456`
+**Ambiente:** homologação
+**RPS:** lote `1`, série `001`, número `1`
 
-```env
-ACBR_BASE_URL="https://proxy.api.acbr.net.br"
-ACBR_TOKEN="seu_token_acbr"
-```
+Para emitir NFS-e em homologação, a empresa deve estar registrada:
+1. Na ACBr API (`PUT /empresas/{cnpj}` com dados completos + `inscricao_municipal`)
+2. Configuração NFS-e (`PUT /empresas/{cnpj}/nfse` com lote/série/numero)
+3. Para provedor `nacional`: registro manual no [gov.br/nfse](https://www.gov.br/nfse)
+
+### Referência ACBr
+
+- Documentação: https://dev.acbr.api.br
+- OpenAPI: https://prod.acbr.api.br/openapi/swagger.json
+- Auth: `POST https://auth.acbr.api.br/realms/ACBrAPI/protocol/openid-connect/token`
+- Homologação: `https://hom.acbr.api.br`
+- Produção: `https://prod.acbr.api.br`
+
+---
+
+## Prisma Schema
+
+Modelos:
+
+| Modelo | Tabela | Descrição |
+|--------|--------|-----------|
+| `Tenant` | `tenants` | Multitenancy (1 registro default) |
+| `User` | `users` | Mapeia para Supabase Auth (`openId`) |
+| `Account` | `accounts` | Contas financeiras |
+| `Category` | `categories` | Categorias de receita/despesa |
+| `Transaction` | `transactions` | Transações (vincula account + category) |
+| `Test` | `tests` | Relatórios de teste (HTML) |
+
+---
 
 Desenvolvido por [mobilecosta](https://github.com/mobilecosta)
