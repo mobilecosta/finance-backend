@@ -32,7 +32,7 @@ async function saveCoverageReport() {
     const reportHtml = findReportHtml();
 
     if (!reportHtml) {
-      console.error('Erro: Nenhum relatório HTML encontrado em', lcovHtmlPath, 'ou', jestHtmlPath);
+      console.log('⚠️ Aviso: Nenhum relatório HTML encontrado. Pulando salvamento de cobertura.');
       return;
     }
 
@@ -72,7 +72,7 @@ async function saveCoverageReport() {
     console.log('Relatório salvo no banco de dados com sucesso.');
   } catch (error) {
     console.error('Erro ao salvar o relatório:', error);
-    process.exit(1);
+    // Não encerra com erro para não quebrar o build se falhar apenas o salvamento do relatório
   }
 }
 
