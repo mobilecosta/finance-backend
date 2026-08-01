@@ -85,9 +85,7 @@ async function sendTestReportEmail(to, reportHtml) {
 
   try {
     const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
+      service: 'gmail',
       auth: { user, pass },
     });
 
