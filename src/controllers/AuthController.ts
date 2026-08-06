@@ -177,4 +177,26 @@ export class AuthController {
       res.status(500).json({ message: 'Internal server error' });
     }
   }
+
+  async getUsers(req: Req, res: Res) {
+    try {
+      const prisma = await getPrisma();
+      const users = await prisma.user.findMany({
+        orderBy: { createdAt: 'desc' },
+        select: {
+          openId: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          lastSignedIn: true,
+        },
+      });
+
+      res.json({ count: users.length, users });
+    } catch (error) {
+      console.error('Get users error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
 }

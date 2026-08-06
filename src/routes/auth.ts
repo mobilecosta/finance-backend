@@ -10,5 +10,6 @@ router.post('/signin', authController.signin);
 router.get('/callback', authController.callback);
 router.post('/signout', authMiddleware, authController.signout);
 router.get('/user', authMiddleware, authController.getUser);
+router.get('/users', authMiddleware, authController.getUsers);
 
 export default router;
