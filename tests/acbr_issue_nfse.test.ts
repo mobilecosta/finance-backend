@@ -1,6 +1,6 @@
 import { authenticate, proxyRequest } from '../src/services/acbr';
 
-describe(\'ACBr Issue NFS-e Tests\', () => {
+describe('ACBr Issue NFS-e Tests', () => {
   let issuedNfseKey: string;
 
   const clientId = '1l7JPNYuvVqpJUtGW1Zi';
@@ -63,8 +63,8 @@ describe(\'ACBr Issue NFS-e Tests\', () => {
         query: { ambiente: 'homologacao' }
       });
       expect(result).toBeDefined();
-      console.log(\'✅ NFS-e emitida com sucesso:\', JSON.stringify(result, null, 2));
-      issuedNfseKey = result.nfse.chave;
+      console.log('✅ NFS-e emitida com sucesso:', JSON.stringify(result, null, 2));
+      issuedNfseKey = result?.nfse?.chave ?? result?.id;
 
     } catch (e) {
       console.log('❌ Falha na emissão NFS-e:', e instanceof Error ? e.message : e);
@@ -77,7 +77,7 @@ describe(\'ACBr Issue NFS-e Tests\', () => {
     const listResult = await proxyRequest('/nfse', authData.access_token, {
       query: {
         cpf_cnpj: cnpj,
-        ambiente: \'homologacao\',
+        ambiente: 'homologacao',
         chave: issuedNfseKey,
       }
     });

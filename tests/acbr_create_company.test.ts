@@ -41,7 +41,11 @@ describe('ACBr Create Company Tests', () => {
       expect(result).toBeDefined();
     } catch (e: any) {
       // If company already exists, the test should still pass
-      if (e.message && e.message.includes("Empresa já cadastrada")) {
+      const responseData = e?.responseData;
+      const errorCode = responseData?.error?.code ?? responseData?.code;
+      const errorMsg = responseData?.error?.message ?? responseData?.message ?? e.message;
+
+      if (errorCode === 'EmpresaAlreadyExists' || String(errorMsg).includes('empresa com o CPF/CNPJ')) {
         console.log("ℹ️ Empresa já cadastrada, tentando atualizar dados...");
         const updateResult = await proxyRequest(`/empresas/${cnpj}`, authData.access_token, {
           method: 'PUT',
