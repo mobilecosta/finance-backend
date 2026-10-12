@@ -1,4 +1,5 @@
 import {
+  isOpeningBalanceRow,
   isSummaryRow,
   isValidSpreadsheetId,
   normalizeHeader,
@@ -78,9 +79,15 @@ describe('Sheet Reader (modelo dashboard_totvs)', () => {
     expect(preview.validRows).toBe(2);
   });
 
-  it('extrai a competência do nome da aba', () => {
+  it('extrai a competência do nome da aba (hífen ou barra)', () => {
     expect(tabPeriod('01/2026')).toEqual({ mm: '01', yyyy: '2026' });
+    expect(tabPeriod('01-2026')).toEqual({ mm: '01', yyyy: '2026' });
     expect(tabPeriod('aba')).toBeNull();
+  });
+
+  it('identifica saldo anterior', () => {
+    expect(isOpeningBalanceRow('Saldo Anterior')).toBe(true);
+    expect(isOpeningBalanceRow('Aluguel')).toBe(false);
   });
 
   it('identifica linhas de totalização', () => {

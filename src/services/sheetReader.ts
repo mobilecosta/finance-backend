@@ -229,15 +229,20 @@ function typeFromText(raw: string): 'income' | 'expense' | '' {
   return '';
 }
 
-/** Extrai {mm, yyyy} de nomes de aba como "01/2026". */
+/** Extrai {mm, yyyy} de nomes de aba como "01-2026" ou "01/2026". */
 export function tabPeriod(tab: string): { mm: string; yyyy: string } | null {
-  const m = tab.trim().match(/^(\d{2})\/(\d{4})$/);
+  const m = tab.trim().match(/^(\d{2})[-\/](\d{4})$/);
   return m ? { mm: m[1], yyyy: m[2] } : null;
 }
 
 /** Linhas de totalização mensal (ex.: "TOTAIS DO MÊS") não migram. */
 export function isSummaryRow(description: string): boolean {
   return /totais?\s+do\s+m[eê]s/i.test(description || '');
+}
+
+/** Saldo de abertura ("Saldo Anterior") não é transação — não migra. */
+export function isOpeningBalanceRow(description: string): boolean {
+  return /saldo\s+anterior/i.test((description || '').trim());
 }
 
 /** Normaliza as linhas de uma aba para o formato da rotina de transações. */
@@ -277,6 +282,7 @@ export function normalizeSheetTab(
     if (record.every((c) => !(c || '').trim())) continue;
     const description = cell(record, idx.description);
     if (isSummaryRow(description)) continue;
+    if (isOpeningBalanceRow(description)) continue;
     // Eco de saldo / linha sem conteúdo transacional (ex.: só SALDO repetido).
     const amountRawEarly = cell(record, idx.amount);
     const expenseRawEarly = cell(record, idx.amountExpense);

@@ -38,7 +38,7 @@ export class MigrationController {
     const limitRaw = Number(req.query.limit);
 
     if (!tab) {
-      return res.status(400).json({ error: 'Parâmetro obrigatório: tab (ex.: 01/2026).' });
+      return res.status(400).json({ error: 'Parâmetro obrigatório: tab (ex.: 01-2026).' });
     }
 
     const mapping: SheetColumnMapping = {
