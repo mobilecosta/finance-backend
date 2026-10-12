@@ -12,6 +12,7 @@ import authRoutes from '../src/routes/auth.js';
 import acbrRoutes from '../src/routes/acbr.js';
 import acbrTestRoutes from '../src/routes/acbr-tests.js';
 import testRoutes from '../src/routes/tests.js';
+import migrationRoutes from '../src/routes/migration.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -98,6 +99,7 @@ app.use('/api/finance', financeRoutes);
 app.use('/api/acbr', acbrRoutes);
 app.use('/api/acbr-tests', acbrTestRoutes);
 app.use('/api/tests', testRoutes);
+app.use('/api/migration', migrationRoutes);
 
 app.get('/tests', async (req: any, res: any) => {
   try {
