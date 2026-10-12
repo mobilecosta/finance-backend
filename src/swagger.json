@@ -164,6 +164,34 @@
         }
       }
     },
+    "/api/migration/sheet-preview": {
+      "get": {
+        "summary": "Prévia de migração de aba do Google Sheets",
+        "description": "Lê uma aba direto da API do Google (CSV público via gviz, sem API key, modelo dashboard_totvs) e devolve as linhas normalizadas no formato da rotina de transações: datas ISO (coluna de data ou DIA + competência MM/YYYY da aba), valores pt-BR, par VLR DESPESA/VLR RECEITA, ignorando TOTAIS DO MÊS e ecos de SALDO.",
+        "tags": ["Migração"],
+        "parameters": [
+          { "name": "tab", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Nome da aba (ex.: 01/2026).", "example": "01/2026" },
+          { "name": "spreadsheetId", "in": "query", "required": false, "schema": { "type": "string" }, "description": "ID da planilha. Padrão: planilha de migração 2026." },
+          { "name": "typeMode", "in": "query", "required": false, "schema": { "type": "string", "enum": ["column", "signal", "fixed-income", "fixed-expense"], "default": "signal" }, "description": "Como definir income/expense." },
+          { "name": "colDate", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Override do cabeçalho da data." },
+          { "name": "colDay", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Override do cabeçalho do dia (ex.: DIA)." },
+          { "name": "colDescription", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "colAmount", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "colAmountExpense", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "colAmountIncome", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "colType", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "colCategory", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "colStatus", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "default": 200 }, "description": "Máximo de linhas retornadas (1-1000)." }
+        ],
+        "responses": {
+          "200": { "description": "Prévia normalizada: headers, rows, totais, issues (level error/warning)." },
+          "400": { "description": "Parâmetro tab ausente." },
+          "401": { "description": "Sem token Bearer (resposta sem corpo)." },
+          "502": { "description": "Planilha indisponível sem login (compartilhar como Leitor)." }
+        }
+      }
+    },
     "/api/acbr/auth": {
       "post": {
         "summary": "Autenticar na ACBr API",
